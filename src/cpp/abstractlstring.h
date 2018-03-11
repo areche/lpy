@@ -35,7 +35,12 @@
 #include <deque>
 #include <functional>
 #include "axialtree_manip.h"
+#ifndef LPY_WITHOUT_QT
 #include <QtCore/QSharedData>
+#else
+#include "copy_on_write_ptr.h"
+#include "mutex_flag.h"
+#endif
 #include <plantgl/tool/util_hashmap.h>
 
 LPY_BEGIN_NAMESPACE
@@ -79,21 +84,20 @@ private:
 #ifdef LSTRING_SHARED_DATA
 
  template<class AbstractLString>
- struct LSInternal  : public QSharedData 
+ struct LSInternal
+#ifndef LPY_WITHOUT_QT
+  : public QSharedData
+#endif
  {
  public:
 	 typedef typename AbstractLString::ModuleType ModuleType;
 	 typedef typename AbstractLString::ModuleList ModuleList;
 	 typedef typename ModuleList::const_iterator const_iterator;
 
-	 LSInternal() : 
-		QSharedData(), __string() {}
-	 LSInternal(const LSInternal& other) : 
-		QSharedData(other), __string(other.__string) {}
-	 LSInternal(const ModuleType& m): 
-		QSharedData(),__string(1,m) {}
-     LSInternal(const_iterator beg, const_iterator end) : 
-			QSharedData(), __string(beg,end) {}
+     LSInternal() : __string() {}
+     LSInternal(const LSInternal& other) : __string(other.__string) {}
+     LSInternal(const ModuleType& m) : __string(1,m) {}
+     LSInternal(const_iterator beg, const_iterator end) : __string(beg,end) {}
      ~LSInternal() {}
 
      ModuleList __string;
@@ -101,7 +105,11 @@ private:
 
 
  typedef LSInternal<AbstractLString<typename AbstractLString::element_type> > AbstractLStringInternal;
+#ifndef LPY_WITHOUT_QT
  typedef QSharedDataPointer<AbstractLStringInternal> AbstractLStringInternalPtr;
+#else
+ typedef copy_on_write_ptr<AbstractLStringInternal, cow_ownership_flags::mutex_flag> AbstractLStringInternalPtr;
+#endif
 
  AbstractLStringInternalPtr __data;
 
@@ -155,7 +163,6 @@ public:
 
   ~AbstractLString() { }
  
-
   /// Returns an iterator at the beginning of \e self.
   inline iterator begin() { return __string().begin(); }
 
@@ -461,15 +468,15 @@ protected:
         if (resj == std::string::npos) resj = size();
      }
 
-	 inline void getValidIterators(int i, int j, const_iterator& resi, const_iterator& resj) const {
-		size_t s = size();
-		if( i < 0 ) i += s;
-		if( j < 0 ) j += s;
-	    if( j > s ) j = s;
-		if (i < 0  || i >= s || j < i) throw PythonExc_IndexError("index out of range");
-		resi =const_begin()+i;
-		resj =const_begin()+j;
-	 }
+     inline void getValidIterators(int i, int j, const_iterator& resi, const_iterator& resj) const {
+        size_t s = size();
+        if( i < 0 ) i += s;
+        if( j < 0 ) j += s;
+        if( j > s ) j = s;
+        if (i < 0  || i >= s || j < i) throw PythonExc_IndexError("index out of range");
+        resi =const_begin()+i;
+        resj =const_begin()+j;
+     }
 
      inline void getValidIterators(size_t i, size_t j, const_iterator& resi, const_iterator& resj) const {
         resi =const_begin()+i;
