@@ -1,0 +1,3 @@
+[submodule "plantgl"]
+	path = plantgl
+	url = https://github.com/areche/plantgl.git
