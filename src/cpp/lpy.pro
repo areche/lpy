@@ -1,22 +1,19 @@
+include(../../config.pri)
+
 TARGET = Lpy
 TEMPLATE = lib
 
 QT -= gui
 
-CONFIG += create_prl link_prl c++11
+CONFIG += create_prl link_prl c++14
 
-INCLUDEPATH += $$top_srcdir/plantgl/src/cpp
-INCLUDEPATH += /usr/local/include
-INCLUDEPATH += C:/DevTools/Boost/include/boost-1_63
+DESTDIR = $$top_builddir/lib
 
-win32 {
-    build_pass:CONFIG(debug, debug|release) {
-        LIBS += -L$$top_builddir/plantgl/src/cpp/plantgl/algo/debug -lAlgo
-    } else {
-        LIBS += -L$$top_builddir/plantgl/src/cpp/plantgl/algo/release -lAlgo
-    }
-} else {
-    LIBS += -L$$top_builddir/plantgl/src/cpp/plantgl/algo -lAlgo
+INCLUDEPATH += $$top_srcdir/plantgl/src/cpp $$BOOST_INCLUDE
+LIBS += -L$$top_builddir/plantgl/lib -lAlgo
+
+!contains(CONFIG, static) {
+    LIBS += -lTool -lMath -lSceneGraph
 }
 
 macx {
@@ -83,12 +80,12 @@ UnityModule {
     DEFINES += TOOLS_NODLL
 } else {
     DEFINES += USING_PYTHON
-    LIBS += -L/usr/local/lib -lboost_python
-    INCLUDEPATH += /usr/include/python2.7
-    LIBS += -L/usr/lib/python2.7/config -lpython2.7
+    LIBS += -L$$BOOST_LIB -lboost_python
+    INCLUDEPATH += $$PYTHON_INCLUDE
+    LIBS += -L$$PYTHON_LIB -lpython2.7
 
     QT += concurrent
-    LIBS += -L$$top_builddir/plantgl/src/cpp/plantgl/gui -lGui
+    LIBS += -lGui
 
     SOURCES += \
         compilation.cpp \
