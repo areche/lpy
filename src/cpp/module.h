@@ -32,13 +32,23 @@
 #define __LSYS_MODULES_H__
 
 #include "error.h"
+#include "lpy_variant.h"
 #include <vector>
+#ifdef USING_PYTHON
 #include <plantgl/python/boost_python.h>
+#endif
 #include <plantgl/tool/util_string.h>
 
 #include "moduleclass.h"
 #include "argcollector.h"
+#include <iostream>
+
+#ifndef LPY_WITHOUT_QT
 #include <QtCore/QSharedData>
+#else
+#include "copy_on_write_ptr.h"
+#include "mutex_flag.h"
+#endif
 
 LPY_BEGIN_NAMESPACE
 
@@ -106,7 +116,9 @@ private:
 
 /*---------------------------------------------------------------------------*/
 
-LPY_API extern boost::python::object getFunctionRepr();
+#ifndef UNITY_MODULE
+LPY_API extern LpyObject getFunctionRepr();
+#endif
 
 template<class Parameter>
 class AbstractParamModule : public Module {
@@ -132,10 +144,10 @@ public:
 	/*attribute_deprecated*/ inline size_t argSize() const { return __constargs().size(); }
 	/*attribute_deprecated*/ inline bool hasArg() const  { return !__constargs().empty(); }
 
-	inline boost::python::list getPyArgs() const 
+    inline LpyObjectList getPyArgs() const
 	{ return toPyList(__constargs()); }
 	
-	inline void setPyArgs(const boost::python::list& l) 
+    inline void setPyArgs(const LpyObjectList& l)
 	{ __args() = toParameterList(l); }
 
     inline const ParameterType& getAt(size_t i) const 
@@ -159,19 +171,19 @@ public:
     inline void delItemAt(int i) 
 	{ delAt(getValidIndex(i));  }
 
-	boost::python::list getSlice(size_t i, size_t j) const {
+    LpyObjectList getSlice(size_t i, size_t j) const {
 		lpyassert( i <= j && j <= size() );
-		boost::python::list res;
-		for(const_iterator it = __constargs().begin()+i; 
-			it != __constargs().begin()+j; ++it) res.append(*it);
-		return res;
+        LpyObjectList res;
+        for(const_iterator it = __constargs().begin()+i;
+            it != __constargs().begin()+j; ++it) addToList(res,*it);
+        return res;
 	}
 
 	inline void delSlice(size_t i, size_t j) 
 	{ lpyassert( i <= j && j <= size() );
 	  __args().erase(__args().begin()+i,__args().begin()+j); }
 
-    inline boost::python::list getSliceItemAt(int i, int j) const 
+    inline LpyObjectList getSliceItemAt(int i, int j) const
 	{ size_t ri, rj; getValidIndices(i,j,ri,rj) ; return getSlice(ri,rj);  }
 
     inline void delSliceItemAt(int i, int j)
@@ -185,42 +197,42 @@ public:
 
     inline bool operator!=(const BaseType& other) const { return !operator==(other); }
 
-	virtual std::string str() const {
+#ifndef UNITY_MODULE
+    virtual std::string str() const {
 		std::string st = name();
 		if(!empty())st +='('+strArg()+')'; 
 		return st;
 	}
 
+    inline LpyTuple toTuple() const {
+        LpyTuple res(name());
+        res += LpyTuple(toPyList(__constargs()));
+        return res;
+    }
+
     virtual std::string repr() const {
-		std::string st = name();
-		if(!empty())st +='('+reprArg()+')'; 
-		return st;
-	}
-
-	inline boost::python::tuple toTuple() const {
-		boost::python::tuple res(name());
-		res += boost::python::tuple(toPyList(__constargs()));
-		return res;
-	}
-
-	std::string strArg() const 
-	{ 
-	  boost::python::str res(",");
-	  boost::python::list argstr;
-	  for (const_iterator it = __constargs().begin(); it != __constargs().end(); ++it)
-			argstr.append(boost::python::str(*it));
-      return boost::python::extract<std::string>(res.join(argstr));
+        std::string st = name();
+        if(!empty())st +='('+reprArg()+')';
+        return st;
     }
 
     std::string reprArg() const
-	{ 
-	  boost::python::str res(",");
-	  boost::python::list argstr;
-      boost::python::object repr = getFunctionRepr();
-	  for (const_iterator it = __constargs().begin(); it != __constargs().end(); ++it)
-			argstr.append(repr(*it));
-      return boost::python::extract<std::string>(res.join(argstr));
+    {
+        boost::python::str res(",");
+        boost::python::list argstr;
+        boost::python::object repr = getFunctionRepr();
+        for (const_iterator it = __constargs().begin(); it != __constargs().end(); ++it)
+        {
+            LpyObject str = repr(*it);
+            std::string s = boost::python::extract<std::string>(str);
+            std::cout << s.c_str();
+            argstr.append(str);
+        }
+        return boost::python::extract<std::string>(res.join(argstr));
     }
+
+    virtual std::string strArg() const = 0;
+#endif
 
     inline std::vector<std::string> getParameterNames() const
     { return getClass()->getParameterNames(); }
@@ -245,16 +257,20 @@ public:
 
     inline const ParameterList& getParameterList() const { return __constargs(); }
 
-	void getNamedParameters(boost::python::dict& parameters, size_t fromIndex = 0) const
-	{
+    void getNamedParameters(LpyObjectMap& parameters, size_t fromIndex = 0) const
+    {
         int firstnamedparameter = std::max<int>(0,size() - getNamedParameterNb());
-		const ParameterNameDict& pnames = getClass()->getParameterNameDict();
-		for(ParameterNameDict::const_iterator itp = pnames.begin(); itp != pnames.end(); ++itp){
-			if(itp->second >= fromIndex) {
-				parameters[boost::python::object(itp->first)] = getAt(firstnamedparameter+itp->second);
-			}
-		}
-	}
+        const ParameterNameDict& pnames = getClass()->getParameterNameDict();
+        for(ParameterNameDict::const_iterator itp = pnames.begin(); itp != pnames.end(); ++itp){
+            if(itp->second >= fromIndex) {
+#ifndef USING_PYTHON
+                parameters[itp->first] = getAt(firstnamedparameter+itp->second);
+#else
+                parameters[boost::python::object(itp->first)] = getAt(firstnamedparameter+itp->second);
+#endif
+            }
+        }
+    }
 
 protected:
      inline size_t getValidParameterPosition(const std::string& pname) const
@@ -268,7 +284,7 @@ protected:
 	 inline size_t getValidIndex(int i) const {
 		size_t s = size();
 		if( i < 0 ) i += s;
-		if (i < 0  || i >= s) throw PythonExc_IndexError("index out of range");
+        assert ((i>=0) && (i<s) && "index out of range");
 		return (size_t)i;
 	 }
 
@@ -277,27 +293,33 @@ protected:
 		if( i < 0 ) i += s;
 		if( j < 0 ) j += s;
 	    if( j > s ) j = s;
-		if (i < 0  || i >= s || j < i) throw PythonExc_IndexError("index out of range");
+        assert (i >= 0  && i < s && j >= i && "index out of range");
 		resi =(size_t)i;
 		resj =(size_t)j;
 	 }
 
  template<class PModule>
  struct LPY_API ParamListInternal 
+ #ifndef LPY_WITHOUT_QT
      : public QSharedData 
+ #endif
  {
 	 typedef PModule ParamModule;
 	 typedef typename ParamModule::ParameterList ParameterList;
 
-	 ParamListInternal() : QSharedData() {}
-	 ParamListInternal(const ParamListInternal& other) : QSharedData(), __args(other.__args) { }
-	 ~ParamListInternal() {}
+     ParamListInternal() {}
+     ParamListInternal(const ParamListInternal& other) : __args(other.__args) { }
+     ~ParamListInternal() {}
 
      ParameterList __args;
  };
  
  typedef ParamListInternal<BaseType> ParamModuleInternal;
+#ifndef LPY_WITHOUT_QT
  typedef QSharedDataPointer<ParamModuleInternal> ParamModuleInternalPtr;
+#else
+ typedef copy_on_write_ptr<ParamModuleInternal, cow_ownership_flags::mutex_flag> ParamModuleInternalPtr;
+#endif
 
   ParamModuleInternalPtr __argholder;
 
@@ -305,19 +327,35 @@ protected:
   inline const ParameterList& __args() const { return __argholder->__args; }
   inline const ParameterList& __constargs() const { return __argholder->__args; }
 
-  static inline boost::python::list toPyList(const ParameterList& pl) {
-	boost::python::list result;
+  static inline LpyObjectList toPyList(const ParameterList& pl) {
+    LpyObjectList result;
 	for(const_iterator it = pl.begin(); it != pl.end(); ++it)
-      result.append(*it);
+      addToList(result,*it);
     return result;
   }
 
-  static inline ParameterList toParameterList(const boost::python::object& t){
-	ParameterList result;
-	bp::object iter_obj = bp::object( bp::handle<>( PyObject_GetIter( t.ptr() ) ) );
-	try {  while( 1 ) result.push_back(bp::extract<ParameterType>(iter_obj.attr( "next" )())()); }
-    catch( bp::error_already_set ){ PyErr_Clear(); }
-   return result;
+  static inline ParameterList toParameterList(const LpyObject& t){
+    ParameterList result;
+#ifndef USING_PYTHON
+    if (is<LpyObjectList>(t)) {
+        LpyObjectList list = get<LpyObjectList>(t);
+        for(LpyObject v: list)
+            result.push_back(v);
+    }
+    else {
+        LsysError("The argument passed to toParameterList is not a LpyObjectList");
+    }
+#else
+    bp::object iter_obj = bp::object( bp::handle<>( PyObject_GetIter( t.ptr() ) ) );
+    try {
+        while( 1 )
+            result.push_back(bp::extract<ParameterType>(iter_obj.attr( "next" )())());
+    }
+    catch( bp::error_already_set ){
+        PyErr_Clear();
+    }
+#endif
+    return result;
  }
 
 };
@@ -328,11 +366,11 @@ class PatternModule;
 
 /*---------------------------------------------------------------------------*/
 
-class LPY_API ParamModule : public AbstractParamModule<boost::python::object> {
+class LPY_API ParamModule : public AbstractParamModule<LpyObject> {
 public:
   friend class ParametricProduction;
 
-  typedef boost::python::object Parameter;
+  typedef LpyObject Parameter;
   typedef AbstractParamModule<Parameter> BaseType;
 
   ParamModule(const std::string& name);
@@ -340,40 +378,46 @@ public:
   ParamModule(size_t classid);
   ParamModule(size_t classid, const std::string& args);
 
-  ParamModule(boost::python::tuple t);
-  ParamModule(boost::python::list t);
+#ifndef UNITY_MODULE
+  ParamModule(LpyTuple t);
+#endif
+
+  ParamModule(LpyObjectList t);
 
   ParamModule(const std::string& name, 
-			  const boost::python::list& args);
+              const LpyObjectList& args);
   ParamModule(size_t classid, 
-              const boost::python::list& args);
+              const LpyObjectList& args);
 
-  ParamModule(const ModuleClassPtr m, 
-              const boost::python::tuple& args);
-
-  ParamModule(const std::string& name, 
-			  const boost::python::object& args);
-
-  ParamModule(const std::string& name, 
-			  const boost::python::object&,
-			  const boost::python::object&);
-  ParamModule(const std::string& name, 
-			  const boost::python::object&,
-			  const boost::python::object&,
-			  const boost::python::object&);
+#ifndef UNITY_MODULE
+  ParamModule(const ModuleClassPtr m,
+              const LpyTuple& args);
+#endif
 
   ParamModule(const std::string& name, 
-			  const boost::python::object&,
-			  const boost::python::object&,
-			  const boost::python::object&,
-			  const boost::python::object&);
+              const Parameter& args);
 
   ParamModule(const std::string& name, 
-			  const boost::python::object&,
-			  const boost::python::object&,
-			  const boost::python::object&,
-			  const boost::python::object&,
-			  const boost::python::object&);
+              const Parameter&,
+              const Parameter&);
+
+  ParamModule(const std::string& name, 
+              const Parameter&,
+              const Parameter&,
+              const Parameter&);
+
+  ParamModule(const std::string& name, 
+              const Parameter&,
+              const Parameter&,
+              const Parameter&,
+              const Parameter&);
+
+  ParamModule(const std::string& name, 
+              const Parameter&,
+              const Parameter&,
+              const Parameter&,
+              const Parameter&,
+              const Parameter&);
 
   virtual ~ParamModule();
 
@@ -383,11 +427,10 @@ public:
   std::string _getString(int) const;
 
   template<class T>
-  T _get(int i) const { return boost::python::extract<T>(getAt(i))(); }
+  T _get(int i) const { return get<T>(getAt(i)); }
 
   template<class T>
-  bool _check(int i) const { return boost::python::extract<T>(getAt(i)).check(); }
-
+  bool _check(int i) const { return is<T>(getAt(i)); }
 
   virtual void _setValues(real_t,real_t,real_t) ;
   inline void _setValues(const TOOLS(Vector3)& v) { _setValues(v.x(),v.y(),v.z()); }
@@ -397,7 +440,7 @@ public:
   bool match(const PatternModule&m, ArgList&) const;
   bool match(const std::string&, size_t nbargs) const;
 
-  inline void interpret(PGL::Turtle& t) { getClass()->interpret(*this,t); }
+  inline void interpret(PGL::Turtle& t) { LsysWarning("Module::Interpret"); getClass()->interpret(*this,t); }
 
   inline bool operator==(const ParamModule& other) const 
   { return (sameName(other) && (__argholder == other.__argholder || __constargs() == other.__constargs())); }
@@ -408,8 +451,22 @@ public:
   inline bool operator!=(const std::string& other) const 
   { return other != name();}
 
-  void appendArgumentList(const boost::python::object& arglist) ;
+  void appendArgumentList(const LpyObject& arglist) ;
 
+#ifndef UNITY_MODULE
+  virtual std::string strArg() const
+  {
+//#ifndef USING_PYTHON
+//        return toString(__constargs());
+//#else
+        boost::python::str res(",");
+        boost::python::list argstr;
+        for (const_iterator it = __constargs().begin(); it != __constargs().end(); ++it)
+            argstr.append(boost::python::str(*it));
+        return boost::python::extract<std::string>(res.join(argstr));
+//#endif
+  }
+#endif
 
 protected:
   ParamModule();

@@ -29,6 +29,14 @@
  */
 
 #include "lsyscontext.h"
+
+#ifndef UNITY_MODULE
+#ifdef LPY_WITHOUT_QT
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
+#else
+#include <QtCore/QMutexLocker>
+#endif
 #include "lsysrule.h"
 #include "matching.h"
 #include "lpy_parser.h"
@@ -38,11 +46,16 @@
 #include <stack>
 #include <QtCore/QThread>
 #include <QtCore/QMutex>
-#include <QtCore/QMutexLocker>
 
 using namespace boost::python;
 LPY_USING_NAMESPACE
 PGL_USING(PglTurtle)
+
+#endif
+
+LPY_BEGIN_NAMESPACE
+
+#ifndef UNITY_MODULE
 /*---------------------------------------------------------------------------*/
 
 const std::string LsysContext::InitialisationFunctionName("__initialiseContext__");
@@ -57,14 +70,19 @@ const int LsysContext::DEFAULT_OPTIMIZATION_LEVEL(1);
 /*---------------------------------------------------------------------------*/
 
 static GlobalContext * GLOBAL_LSYSCONTEXT = NULL;
-
-
+#endif
 static std::vector<LsysContext *> LSYSCONTEXT_STACK;
 static LsysContext * DEFAULT_LSYSCONTEXT = NULL;
 // static LsysContext * CURRENT_LSYSCONTEXT = LsysContext::globalContext();
 static LsysContext * CURRENT_LSYSCONTEXT = NULL;
+#ifndef UNITY_MODULE
+#ifdef LPY_WITHOUT_QT
+static boost::mutex CURRENT_LSYSCONTEXT_MUTEX;
+#define MUTEX_LOCKER(M) boost::lock_guard<boost::mutex> guard(M);
+#else
 static QMutex CURRENT_LSYSCONTEXT_MUTEX;
-
+#define MUTEX_LOCKER(M) QMutexLocker locker(&M);
+#endif
 
 class ContextGarbageCollector
 {
@@ -127,11 +145,10 @@ LsysContext::defaultContext()
     return DEFAULT_LSYSCONTEXT; 
 }
 
-
 LsysContext *
 LsysContext::current()
 { 
-    QMutexLocker locker(&CURRENT_LSYSCONTEXT_MUTEX);
+    MUTEX_LOCKER(CURRENT_LSYSCONTEXT_MUTEX);
     if(!CURRENT_LSYSCONTEXT) CURRENT_LSYSCONTEXT = globalContext(); // defaultContext();
 	return CURRENT_LSYSCONTEXT; 
 }
@@ -154,7 +171,7 @@ void
 LsysContext::done() 
 { 
   if(isCurrent() && !LSYSCONTEXT_STACK.empty()){
-    QMutexLocker locker(&CURRENT_LSYSCONTEXT_MUTEX);
+    MUTEX_LOCKER(CURRENT_LSYSCONTEXT_MUTEX);
 	CURRENT_LSYSCONTEXT = LSYSCONTEXT_STACK.back();
 	LSYSCONTEXT_STACK.pop_back();
 	doneEvent();
@@ -169,12 +186,14 @@ LsysContext::isCurrent() const
   if (!CURRENT_LSYSCONTEXT) { CURRENT_LSYSCONTEXT = GLOBAL_LSYSCONTEXT; }
   return CURRENT_LSYSCONTEXT == this; 
 }
-
+#endif
 
 void LsysContext::currentEvent()
 {
+#ifndef UNITY_MODULE
 	for(LsysOptions::iterator it = options.begin(); it != options.end(); ++it)
 		(*it)->activateSelection();
+#endif
 	for(ModuleClassList::const_iterator it = __modules.begin(); it != __modules.end(); ++it)
 		(*it)->activate();
 	for(ModuleVTableList::const_iterator it = __modulesvtables.begin(); it != __modulesvtables.end(); ++it)
@@ -193,11 +212,14 @@ void LsysContext::doneEvent()
 	    { ModuleClassTable::get().remove(it->first); }
 }
 
+#ifndef UNITY_MODULE
+
 void LsysContext::pushedEvent(LsysContext * newEvent)
 {
 	doneEvent();
 }
 
+#endif
 void LsysContext::restoreEvent(LsysContext * previousEvent)
 {
 	currentEvent();
@@ -205,8 +227,9 @@ void LsysContext::restoreEvent(LsysContext * previousEvent)
 
 /*---------------------------------------------------------------------------*/
 
-LsysContext::LsysContext():
-__direction(eForward),
+LsysContext::LsysContext()
+#ifndef UNITY_MODULE
+: __direction(eForward),
 __group(0),
 __selection_always_required(false),
 __selection_requested(false),
@@ -226,11 +249,16 @@ __early_return_mutex(),
 __paramproductions(),
 __multicore(false),
 __bracketmapping_optim_level(0)
+#endif
 {
+#ifndef UNITY_MODULE
     registerLstringMatcher();
-	IncTracker(LsysContext)
-	init_options();
+    IncTracker(LsysContext)
+    init_options();
+#endif
 }
+
+#ifndef UNITY_MODULE
 
 LsysContext::LsysContext(const LsysContext& lsys):
   __direction(lsys.__direction),
@@ -331,13 +359,17 @@ LsysContext::importContext(const LsysContext& other)
 
 }
 
+#endif
 
 LsysContext::~LsysContext()
 {
-	DecTracker(LsysContext)
-	// std::cerr << "context deleted" << std::endl;
+#ifndef UNITY_MODULE
+    DecTracker(LsysContext)
+#endif
+    // std::cerr << "context deleted" << std::endl;
 }
 
+#ifndef UNITY_MODULE
 void LsysContext::init_options()
 {
 	LsysOption* option;
@@ -685,14 +717,14 @@ LsysContext::compile(const std::string& name, const std::string& code) {
   }
   return object();
 }
-object 
+object
 LsysContext::evaluate(const std::string& code) {
   ContextMaintainer c(this);
   if(!code.empty()){
-	dict local_namespace;
-	handle<> result(allow_null( 
+    dict local_namespace;
+    handle<> result(allow_null(
 	  PyRun_String(code.c_str(),Py_eval_input,globals(),local_namespace.ptr())));
-	return object(result);
+    return object(result);
   }
   return object();
 }
@@ -1174,19 +1206,21 @@ PyObject *
 LocalContext::globals() const 
 { return __globals.ptr(); }
 
+
 /*---------------------------------------------------------------------------*/
 
 GlobalContext::GlobalContext():
   LsysContext(){
-    __globals = handle<>(borrowed( PyModule_GetDict(PyImport_AddModule("__main__"))));
+    __globals = boost::python::handle<>(boost::python::borrowed( PyModule_GetDict(PyImport_AddModule("__main__"))));
 }
 
 GlobalContext::~GlobalContext()
 {
-
+#ifndef UNITY_MODULE
 	if(!(LSYSCONTEXT_STACK.empty() && isCurrent()))
 		while(!isCurrent()) currentContext()->done();
 	assert(LSYSCONTEXT_STACK.empty() && isCurrent() && "LsysContext not all done!");
+#endif
 }
 
 
@@ -1209,7 +1243,9 @@ GlobalContext::getFunctionRepr() {
     }
 	return __reprFunc;
 }
+#endif
 
+LPY_END_NAMESPACE
 
 /*---------------------------------------------------------------------------*/
 

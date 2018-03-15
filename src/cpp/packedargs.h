@@ -32,17 +32,19 @@
 #define __LSYS_PACKEDARG_H__
 
 #include "error.h"
-#include <boost/python.hpp>
+#include "lpy_variant.h"
 
 LPY_BEGIN_NAMESPACE
 
 /*---------------------------------------------------------------------------*/
 
-struct LPY_API PackedArgs {
-public:
-	PackedArgs(const boost::python::object _args): args(_args) {}
-    boost::python::object args;
-};
+// Useless???
+
+//struct LPY_API PackedArgs {
+//public:
+//    PackedArgs(const LpyObject _args): args(_args) {}
+//    LpyObject args;
+//};
 
 /*---------------------------------------------------------------------------*/
 

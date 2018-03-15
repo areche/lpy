@@ -32,7 +32,11 @@
 #include "module.h"
 #include "axialtree.h"
 #include "interpretation.h"
+#ifdef UNITY_MODULE
+#include <plantgl/scenegraph/scene/shape.h>
+#else
 #include "lsyscontext.h"
+#endif
 #include "tracker.h"
 #include <sstream>
 
@@ -130,6 +134,7 @@ void LPY::turtle_partial_interpretation(AxialTree& tree, Turtle& turtle){
   }
 }
 
+#ifndef UNITY_MODULE
 void LPY::turtle_interpretation(AxialTree& tree, Turtle& turtle, const StringMatching& matching){
   turtle.start();
   StringMatching::const_iterator _iditer = matching.begin();
@@ -144,6 +149,7 @@ void LPY::turtle_interpretation(AxialTree& tree, Turtle& turtle, const StringMat
 	LsysError("Ill-formed string: unmatched brackets");
   }
 }
+#endif
 
 /*---------------------------------------------------------------------------*/
 

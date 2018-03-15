@@ -1381,28 +1381,28 @@ Lsystem::__derive( size_t starting_iter ,
 	  size_t i = 0;
       if(isEarlyReturnEnabled()) return workstring;
 	  for(; (matching||no_match_no_return) && i < nb_iter; ++i){
-		  if (__context.isSelectionAlwaysRequired() || __context.isSelectionRequested()){
-			  std::vector<uint_t> sel;
-			  if (__context.isSelectionRequested()){
-				  sel.push_back(waitSelection(__context.getSelectionMessage()));
-				  __context.selectionAquired();
-			  }
-			  else sel = getSelection();
-			  if (!sel.empty()) {
-				  uint_t added = 0;
-				  size_t wstrsize = workstring.size();
-				  std::sort(sel.begin(),sel.end());
-				  for(std::vector<uint_t>::const_iterator it = sel.begin(); it != sel.end(); ++it)
-				  {
-					  if(*it < wstrsize){
-						  workstring.insertAt(*it+added,ParamModule("X"));
-						  added+=1;
-					  }
-				  }
+          if (__context.isSelectionAlwaysRequired() || __context.isSelectionRequested()){
+              std::vector<uint_t> sel;
+              if (__context.isSelectionRequested()){
+                  sel.push_back(waitSelection(__context.getSelectionMessage()));
+                  __context.selectionAquired();
+              }
+              else sel = getSelection();
+              if (!sel.empty()) {
+                  uint_t added = 0;
+                  size_t wstrsize = workstring.size();
+                  std::sort(sel.begin(),sel.end());
+                  for(std::vector<uint_t>::const_iterator it = sel.begin(); it != sel.end(); ++it)
+                  {
+                      if(*it < wstrsize){
+                          workstring.insertAt(*it+added,ParamModule("X"));
+                          added+=1;
+                      }
+                  }
 
-			  }
-		  }
-		  __lastcomputedscene = ScenePtr();
+              }
+          }
+          __lastcomputedscene = ScenePtr();
 		  __context.frameDisplay(i == (nb_iter -1));
 		  __context.setIterationNb(starting_iter+i);
           __apply_pre_process(workstring,true);

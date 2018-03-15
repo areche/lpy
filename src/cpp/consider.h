@@ -33,6 +33,7 @@
 
 #include "global.h"
 #include "module.h"
+#include "modulevtable.h"
 
 LPY_BEGIN_NAMESPACE
 

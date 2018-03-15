@@ -51,10 +51,11 @@ public:
     static const std::string VersionTag;
 /*---------------------------------------------------------------------------*/
 
-	/// Format checking function
+    /// Format checking function
 	static const std::vector<float> getSupportedFormat() ; 
-	static bool isSupportedFormat(float format);
-	static float getFormatVersion(const std::string& lcode) ; 
+    static bool isSupportedFormat(float format);
+#ifndef UNITY_MODULE
+    static float getFormatVersion(const std::string& lcode) ;
 	static float getFormatVersion(std::string::const_iterator& it,
 								  std::string::const_iterator begpos,
 								  std::string::const_iterator endpos) ; 
@@ -78,7 +79,7 @@ public:
 				 int lineno = -1,
 				 size_t * pprod_id = NULL);
 
-
+#endif
 	static std::vector<std::pair<size_t,std::string> > parselstring(
 				 std::string::const_iterator& beg,
 				 std::string::const_iterator endpos,
@@ -91,7 +92,7 @@ public:
 
 		{ std::string::const_iterator beg = lcode.begin(); return parselstring(beg,lcode.end(),'\n',lineno); }
 
-
+#ifndef UNITY_MODULE
 /*---------------------------------------------------------------------------*/
 	/// Module declaration
 	struct ModDeclaration {
@@ -136,6 +137,7 @@ public:
 
 	static std::string trim(const std::string& str);
 	static std::string removeSpaces(const std::string& str);
+#endif
 
 	static bool isValidVariableName(const std::string& args)
 		{ return isValidVariableName(args.begin(),args.end()); }
@@ -143,6 +145,7 @@ public:
 	static bool isValidVariableName(std::string::const_iterator beg,
 						 			std::string::const_iterator end);
 
+#ifndef UNITY_MODULE
 	static std::pair<std::string,std::string> parse_variable(std::string::const_iterator beg,
 						 						             std::string::const_iterator end,
 															 int lineno = -1);
@@ -154,7 +157,7 @@ public:
 
 	static bool isAConstant(std::string::const_iterator beg,
 			std::string::const_iterator end);
-
+#endif
 
 };
 

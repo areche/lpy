@@ -29,12 +29,16 @@
  */
 
 #include "axialtree.h"
-#include "patternstring.h"
-#include "lpy_parser.h"
 #include "tracker.h"
+#include "lpy_parser.h"
+#include "error.h"
+
+#ifndef UNITY_MODULE
+#include "patternstring.h"
 #include "matching.h"
 
 using namespace boost::python;
+#endif
 
 LPY_BEGIN_NAMESPACE
 
@@ -49,58 +53,105 @@ AxialTree::AxialTree(const AxialTree& m):
   BaseType(m)
   { IncTracker(AxialTree) }
 
- AxialTree::AxialTree(const std::string& s):
+AxialTree::AxialTree(const std::string& s):
   BaseType()
-{ 
+{
   IncTracker(AxialTree)
   std::vector<std::pair<size_t,std::string> > parsedstring = LpyParsing::parselstring(s);
 
   reserve(size()+parsedstring.size());
   for(std::vector<std::pair<size_t,std::string> >::const_iterator it = parsedstring.begin();
-	  it != parsedstring.end(); ++it){
-		__string().push_back(ParamModule(it->first,it->second));
+      it != parsedstring.end(); ++it){
+        __string().push_back(ParamModule(it->first,it->second));
   }
 }
+
+#ifndef UNITY_MODULE
+AxialTree::AxialTree(const boost::python::tuple& t):
+  BaseType(ParamModule(t))
+{
+    IncTracker(AxialTree)
+}
+#endif
 
 AxialTree::AxialTree(const ParamModule& m):
    BaseType(m)
 { IncTracker(AxialTree) }
 
-AxialTree::AxialTree(const boost::python::list& l):
-  BaseType(){
-  IncTracker(AxialTree) 
-  object iter_obj = object( handle<>( PyObject_GetIter( l.ptr() ) ) );
-  while( true )
-  {
-        object obj;
-        try {  obj = iter_obj.attr( "next" )(); }
-        catch( error_already_set ){ PyErr_Clear(); break; }
-        extract<size_t> idext(obj);
-		if (idext.check())
-			__string().push_back(idext());
-		else {
-			extract<std::string> st(obj);
-			if(st.check())
-				operator+=(AxialTree(st()));
-			else {
-				extract<tuple> tu(obj);
-				if(tu.check())
-					__string().push_back(ParamModule(tu()));
-				else {
-					extract<AxialTree> ax(obj);
-					if(ax.check()) operator+=(ax());
-					else __string().push_back(extract<ParamModule>(obj)());
-				}
-			}
-		}
-    }
-}
-
-AxialTree::AxialTree(const boost::python::tuple& t):
-  BaseType(ParamModule(t))
+#ifndef UNITY_MODULE
+AxialTree::AxialTree(const LpyObjectList& l)
+    : BaseType()
 {
-	IncTracker(AxialTree) 
+//#ifndef USING_PYTHON
+//    IncTracker(AxialTree)
+//    for (const LpyObject & o : l)
+//    {
+//        switch (getType(o))
+//        {
+//            case LPY_SIZE: {
+//                size_t s = get<size_t>(o);
+//                LsysWarning("AxialTree::AxialTree : Size : " + std::to_string(s));
+//                __string().push_back(s);
+//                break;
+//            }
+//            case LPY_LIST: {
+//                ParamModule p(get<LpyObjectList>(o));
+//                LsysWarning("AxialTree::AxialTree : ParamModule : " + p.strArg());
+//                __string().push_back(p);
+//                break;
+//            }
+//            case LPY_STRING: {
+//                std::string s = get<std::string>(o);
+//                LsysWarning("AxialTree::AxialTree : String : " + s);
+//                operator+=(AxialTree(s));
+//                break;
+//            }
+//            case LPY_AXIALTREE: {
+//                AxialTree * at = get<AxialTree *>(o);
+//                LsysWarning("AxialTree::AxialTree : AxialTree : " + at->str());
+//                operator+=(*at);
+//                break;
+//            }
+//            case LPY_PARAMMODULE: {
+//                ParamModule * p = get<ParamModule *>(o);
+//                LsysWarning("AxialTree::AxialTree : ParamModule : " + p->strArg());
+//                __string().push_back(*p);
+//                break;
+//            }
+//            default:
+//                LsysError("AxialTree::AxialTree : Unknown Type", __FILE__, __LINE__);
+//        }
+//    }
+//#else
+    IncTracker(AxialTree)
+  LpyObject iter_obj = LpyObject( boost::python::handle<>( PyObject_GetIter( l.ptr() ) ) );
+  while( true )
+    {
+        LpyObject obj;
+        try {  obj = iter_obj.attr( "next" )(); }
+        catch( boost::python::error_already_set ){ PyErr_Clear(); break; }
+        boost::python::extract<size_t> idext(obj);
+        if (idext.check())
+            __string().push_back(idext());
+        else {
+            boost::python::extract<std::string> st(obj);
+            if(st.check())
+                operator+=(AxialTree(st()));
+            else {
+                boost::python::extract<boost::python::tuple> tu(obj);
+                if(tu.check())
+                    __string().push_back(ParamModule(tu()));
+                else {
+                    boost::python::extract<AxialTree> ax(obj);
+                    if(ax.check()) operator+=(ax());
+                    else __string().push_back(boost::python::extract<ParamModule>(obj)());
+                }
+            }
+        }
+    }
+//#endif
 }
+#endif
 
 AxialTree::AxialTree(const_iterator beg, const_iterator end):
   BaseType(beg,end)
@@ -165,7 +216,8 @@ AxialTree::find(const std::string& name, size_t nbparam,
   else return _it;
 }
 
-AxialTree::const_iterator 
+#ifndef UNITY_MODULE
+AxialTree::const_iterator
 AxialTree::find(const PatternString& modules, 
 				const_iterator start,
 				const_iterator stop) const
@@ -175,6 +227,7 @@ AxialTree::find(const PatternString& modules,
   if(_it == stop)return end(); 
   else return _it;
 }
+#endif
 
 AxialTree::const_iterator 
 AxialTree::find(const std::string& name, 
@@ -187,7 +240,8 @@ AxialTree::find(const std::string& name,
   else return _it;
 }
 
-AxialTree 
+#ifndef UNITY_MODULE
+AxialTree
 AxialTree::replace(const PatternModule& i, const ParamModule& j) const{
   AxialTree dest;
   const_iterator _it = const_begin();
@@ -221,7 +275,7 @@ AxialTree::replace(const PatternModule& i, const AxialTree& j) const{
   return dest;
 }
 
-AxialTree 
+AxialTree
 AxialTree::replace(const PatternString& i, const AxialTree& j) const{
   AxialTree dest;
   const_iterator _it = const_begin();
@@ -239,8 +293,7 @@ AxialTree::replace(const PatternString& i, const AxialTree& j) const{
   return dest;
 }
 
-
-bool AxialTree::match(const PatternString& pattern, 
+bool AxialTree::match(const PatternString& pattern,
 					  AxialTree::const_iterator it,
 					  AxialTree::const_iterator& resultingpos,
 					  AxialTree::const_iterator& last_matched,
@@ -352,6 +405,7 @@ AxialTree::leftfind(const PatternString& a,
   if(_it == start && !b)return end(); 
   else return _it;
 }
+#endif
 
 
 LPY_END_NAMESPACE

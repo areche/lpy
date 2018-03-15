@@ -42,6 +42,7 @@ LPY_BEGIN_NAMESPACE
 template<class ArgType>
 struct ArgListCollector { };
 
+#ifndef UNITY_MODULE
 template <>
 struct ArgListCollector<bp::list> {
 public:
@@ -92,9 +93,9 @@ public:
 };
 
 template <>
-struct ArgListCollector<StdArgListType> {
+struct ArgListCollector<LpyObjectDeque> {
 public:
-	typedef StdArgListType element_type;
+    typedef LpyObjectDeque element_type;
 	static inline void append_args(element_type& value, const element_type& elements){
 		value.insert(value.end(),elements.begin(),elements.end());
 	}
@@ -146,6 +147,7 @@ public:
 	}
 
 };
+#endif
 
 
 template <>
@@ -159,16 +161,16 @@ public:
 	static inline void append_as_arg(element_type& value, const element_type& elements){
 		value.push_back(elements.toPyList());
 	}
-	static inline void append_arg(element_type&  value, const bp::object& element){
+    static inline void append_arg(element_type&  value, const LpyObject& element){
 		value.push_back(element);
 	}
 
-	static inline void append_arg_ref(element_type&  value, const bp::object& element){
+    static inline void append_arg_ref(element_type&  value, const LpyObject& element){
 		value.push_back_ref(element);
 	}
 
 
-	static inline void append_n_arg(element_type&  value, size_t n, const bp::object& element){
+    static inline void append_n_arg(element_type&  value, size_t n, const LpyObject& element){
 		for(size_t i = 0; i < n; ++i)
 			value.push_back(element);
 	}
@@ -182,10 +184,10 @@ public:
 		if(!values.empty()){
 			size_t nbvar = values[0].size();
 			for(size_t i = 0; i < nbvar; ++i){
-				bp::list resi;
+                LpyObjectList resi;
 				for(std::vector<element_type>::const_iterator it = values.begin(); it != values.end(); ++it)
-					resi.append((*it)[i]);
-				res.push_back(boost::python::object(resi));
+                    addToList(resi, (*it)[i]);
+                res.push_back(LpyObject(resi));
 			}
 		}
 		return res;

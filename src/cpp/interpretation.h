@@ -32,7 +32,9 @@
 #define __LPY_STRINGINTERPRETER_H__
 
 #include "lpy_config.h"
+#ifndef UNITY_MODULE
 #include "stringmatching.h"
+#endif
 #include <vector>
 #include <string>
 #include <plantgl/algo/modelling/turtle.h>
@@ -49,7 +51,9 @@ std::string LPY_API helpTurtle() ;
 void LPY_API turtle_interpretation(AxialTree& tree, PGL::Turtle& turtle);
 void LPY_API turtle_do_interpretation(AxialTree& tree, PGL::Turtle& turtle);
 void LPY_API turtle_partial_interpretation(AxialTree& tree, PGL::Turtle& turtle);
+#ifndef UNITY_MODULE
 void LPY_API turtle_interpretation(AxialTree& tree, PGL::Turtle& turtle, const StringMatching& matching);
+#endif
 
 /*---------------------------------------------------------------------------*/
 

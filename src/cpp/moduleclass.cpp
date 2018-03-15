@@ -449,13 +449,17 @@ ModuleClassTable::parse(std::string::const_iterator beg,
 			return itname->second;
 		}
 	}
+#ifdef UNITY_MODULE
+    return ModuleClassPtr();
+#else
 	if (mandatory_declaration) return ModuleClassPtr();
 	else { 
 		ModuleClassPtr modclass = declare(*beg);
-		LsysContext::currentContext()->declare(modclass);
+        LsysContext::currentContext()->declare(modclass);
 		nsize = 1;
 		return modclass;
 	}
+#endif
 }
 
 /*---------------------------------------------------------------------------*/

@@ -37,7 +37,6 @@
 LPY_BEGIN_NAMESPACE
 TOOLS_USING_NAMESPACE
 PGL_USING_NAMESPACE
-#define bp boost::python
 
 /*---------------------------------------------------------------------------*/
 
@@ -84,7 +83,8 @@ DeclareSimpleModule(pop,"Pop last state from turtle stack and make it the its cu
 
 DeclareModuleBegin(F, "Move forward and draw. Params: 'length , topradius'.",ePrimitive)
 {
-	size_t nbargs = m.size();
+    t.warning("Move forward");
+    size_t nbargs = m.size();
 	switch (nbargs) {
 		case 0:  t.F(); break;
 		case 1:  t.F(m._getReal(0)); break;
@@ -116,7 +116,7 @@ DeclareModuleBegin(nF,"Produce a n steps path of a given length and varying radi
 		case 3:
             t.nF(m._getReal(0),m._getReal(1),m._getReal(2)); break;
 		default:
-            t.nF(m._getReal(0),m._getReal(1),m._getReal(2),bp::extract<QuantisedFunctionPtr>(m.getAt(3)));
+            t.nF(m._getReal(0),m._getReal(1),m._getReal(2),get<QuantisedFunctionPtr>(m.getAt(3)));
 			break;
 	}
 #endif
@@ -156,8 +156,12 @@ DeclareModuleBegin(stopPolygon,"Pop a polygon from the stack and render it. Para
 {
 	size_t nbargs = m.size();
 	switch (nbargs) {
-		case 0:  t.stopPolygon(); break;
-		default:  t.stopPolygon(m._getBool(0)); break;
+        case 0:
+            t.stopPolygon();
+            break;
+        default:
+            t.stopPolygon(m._getBool(0));
+            break;
 	}
 }
 DeclareModuleEnd
@@ -170,8 +174,9 @@ DeclareModuleBegin(MoveTo,"Set the turtle position. Params : 'x, y, z' or 'v' (o
          case 0:  t.move(); break;
          case 1:  
            {
-              bp::extract<Vector3> ex (m.getAt(0));
-              if (ex.check()) { t.move(ex());}
+              if (is<Vector3>(m.getAt(0))) {
+                  t.move(get<Vector3>(m.getAt(0)));
+              }
               else {
                 real_t y = t.getPosition().y(); 
                 real_t z = t.getPosition().z();
@@ -181,25 +186,37 @@ DeclareModuleBegin(MoveTo,"Set the turtle position. Params : 'x, y, z' or 'v' (o
            }
          case 2:  {
             real_t x = 0;
-            if (m.getAt(0) == boost::python::object()){ x = t.getPosition().x(); }
-            else x = m._getReal(0);
+            if (m.getAt(0) == LpyObject())
+                x = t.getPosition().x();
+            else
+                x = m._getReal(0);
             real_t y = 0;
-            if (m.getAt(1) == boost::python::object()){ y = t.getPosition().y(); }
-            else y = m._getReal(1);
+            if (m.getAt(1) == LpyObject())
+                y = t.getPosition().y();
+            else
+                y = m._getReal(1);
             real_t z = t.getPosition().z();
-            t.move(x,y,z); break;
-        }
+            t.move(x,y,z);
+            break;
+         }
          default: {
             real_t x = 0;
-            if (m.getAt(0) == boost::python::object()){ x = t.getPosition().x(); }
-            else x = m._getReal(0);
+            if (m.getAt(0) == LpyObject())
+                x = t.getPosition().x();
+            else
+                x = m._getReal(0);
             real_t y = 0;
-            if (m.getAt(1) == boost::python::object()){ y = t.getPosition().y(); }
-            else y = m._getReal(1);
+            if (m.getAt(1) == LpyObject())
+                y = t.getPosition().y();
+            else
+                y = m._getReal(1);
             real_t z = 0;
-            if (m.getAt(2) == boost::python::object()){ z = t.getPosition().z(); }
-            else z = m._getReal(2);
-            t.move(x,y,z); break;
+            if (m.getAt(2) == LpyObject())
+                z = t.getPosition().z();
+            else
+                z = m._getReal(2);
+            t.move(x,y,z);
+            break;
         }
 	}
 }
@@ -215,9 +232,10 @@ DeclareModuleBegin(moveRel,"Move relatively from current the turtle position. Pa
          case 0:  break;
          case 1: 
            {
-              bp::extract<Vector3> ex (m.getAt(0));
-              if (ex.check()) { t.shift(ex());}
-              else t.shift(m._getReal(0)); 
+              if (is<Vector3>(m.getAt(0)))
+                  t.shift(get<Vector3>(m.getAt(0)));
+              else
+                  t.shift(m._getReal(0));
               break;
            }
          case 2:  t.shift(m._getReal(0),m._getReal(1)); break;
@@ -235,15 +253,19 @@ DeclareModuleBegin(lineTo,"Trace line to (x,y,z) without changing the orientatio
          case 0:  break;
          case 1:  
            {
-              bp::extract<Vector3> ex (m.getAt(0));
-              if (ex.check()) { t.lineTo(ex());}
-              else t.lineTo(m._getReal(0),0,0); break;
+              if (is<Vector3>(m.getAt(0)))
+                  t.lineTo(get<Vector3>(m.getAt(0)));
+              else
+                  t.lineTo(m._getReal(0),0,0);
+              break;
            }
          case 2:  
            {
-                bp::extract<Vector3> ex (m.getAt(0));
-                if (ex.check()) { t.lineTo(ex(),m._getReal(1));}
-                else t.lineTo(m._getReal(0),m._getReal(1)); break;
+                if (is<Vector3>(m.getAt(0)))
+                    t.lineTo(get<Vector3>(m.getAt(0)), m._getReal(1));
+                else
+                    t.lineTo(m._getReal(0),m._getReal(1));
+                break;
            }
          case 3:  t.lineTo(m._getReal(0),m._getReal(1),m._getReal(2)); break;
          default: t.lineTo(m._getReal(0),m._getReal(1),m._getReal(2),m._getReal(3)); break;
@@ -260,16 +282,18 @@ DeclareModuleBegin(orientedLineTo,"Trace line toward (x,y,z) and change the orie
          case 0:  break;
          case 1:  
              {
-                 bp::extract<Vector3> ex (m.getAt(0));
-                if (ex.check()) { t.oLineTo(ex());}
-                else t.oLineTo(m._getReal(0)); 
+                if (is<Vector3>(m.getAt(0)))
+                    t.oLineTo(get<Vector3>(m.getAt(0)));
+                else
+                    t.oLineTo(m._getReal(0));
                 break;
              }
          case 2: 
              {
-                bp::extract<Vector3> ex (m.getAt(0));
-                if (ex.check()) { t.oLineTo(ex(),m._getReal(1));}
-                else t.oLineTo(m._getReal(0),m._getReal(1)); 
+                if (is<Vector3>(m.getAt(0)))
+                    t.oLineTo(get<Vector3>(m.getAt(0)),m._getReal(1));
+                else
+                    t.oLineTo(m._getReal(0),m._getReal(1));
                 break;
              }
          case 3:  t.oLineTo(m._getReal(0),m._getReal(1),m._getReal(2)); break;
@@ -287,9 +311,10 @@ DeclareModuleBegin(pinPoint,"Orient turtle toward (x,y,z) . Params : 'x, y, z' o
          case 0:  break;
          case 1:  
              {
-                bp::extract<Vector3> ex (m.getAt(0));
-                if (ex.check()) { t.pinpoint(ex());}
-                else t.pinpoint(m._getReal(0)); 
+                if (is<Vector3>(m.getAt(0)))
+                    t.pinpoint(get<Vector3>(m.getAt(0)));
+                else
+                    t.pinpoint(m._getReal(0));
                 break;
              }
          case 2:  t.pinpoint(m._getReal(0),m._getReal(1)); break;
@@ -307,16 +332,19 @@ DeclareModuleBegin(lineRel,"Trace line to pos+(x,y,z) without changing the orien
          case 0:  break;
          case 1:  
              {
-                bp::extract<Vector3> ex (m.getAt(0));
-                if (ex.check()) { t.lineRel(ex());}
-                else t.lineRel(m._getReal(0),0,0); 
+                if (is<Vector3>(m.getAt(0)))
+                    t.lineRel(get<Vector3>(m.getAt(0)));
+                else
+                    t.lineRel(m._getReal(0),0,0);
                 break;
              }
          case 2: 
              {
-                bp::extract<Vector3> ex (m.getAt(0));
-                if (ex.check()) { t.lineRel(ex(),m._getReal(1));}
-                else t.lineRel(m._getReal(0),m._getReal(1)); break;
+                if (is<Vector3>(m.getAt(0)))
+                    t.lineRel(get<Vector3>(m.getAt(0)),m._getReal(1));
+                else
+                    t.lineRel(m._getReal(0),m._getReal(1));
+                break;
              }
          case 3:  t.lineRel(m._getReal(0),m._getReal(1),m._getReal(2)); break;
          default: t.lineRel(m._getReal(0),m._getReal(1),m._getReal(2),m._getReal(3)); break;
@@ -333,16 +361,19 @@ DeclareModuleBegin(oLineRel,"Trace line toward pos+(x,y,z) and change the orient
          case 0:  break;
          case 1:
              {
-                 bp::extract<Vector3> ex (m.getAt(0));
-                 if (ex.check()) { t.oLineRel(ex());}
-                 else t.oLineRel(m._getReal(0)); 
+                 if (is<Vector3>(m.getAt(0)))
+                     t.oLineRel(get<Vector3>(m.getAt(0)));
+                 else
+                     t.oLineRel(m._getReal(0));
                  break;
              }
          case 2:  
              {
-                 bp::extract<Vector3> ex (m.getAt(0));
-                 if (ex.check()) { t.oLineRel(ex(),m._getReal(1));}
-                 else t.oLineRel(m._getReal(0),m._getReal(1)); break;
+                 if (is<Vector3>(m.getAt(0)))
+                     t.oLineRel(get<Vector3>(m.getAt(0)),m._getReal(1));
+                 else
+                     t.oLineRel(m._getReal(0),m._getReal(1));
+                 break;
              }
          case 3:  t.oLineRel(m._getReal(0),m._getReal(1),m._getReal(2)); break;
          default: t.oLineRel(m._getReal(0),m._getReal(1),m._getReal(2),m._getReal(3)); break;
@@ -359,9 +390,10 @@ DeclareModuleBegin(pinPointRel,"Orient turtle toward pos+(x,y,z) . Params : 'x, 
          case 0:  break;
          case 1:  
             {
-                 bp::extract<Vector3> ex (m.getAt(0));
-                 if (ex.check()) { t.pinpointRel(ex());}
-                 else t.pinpointRel(m._getReal(0)); 
+                 if (is<Vector3>(m.getAt(0)))
+                     t.pinpointRel(get<Vector3>(m.getAt(0)));
+                 else
+                     t.pinpointRel(m._getReal(0));
                  break;
             }
          case 2:  t.pinpointRel(m._getReal(0),m._getReal(1)); break;
@@ -381,20 +413,21 @@ DeclareModuleBegin(SetHead,"Set the turtle Heading and Up vector. Params: 'hx, h
       case 0:  t.setHead(); return;
       case 1:  
       {
-          bp::extract<Vector3> ex (m.getAt(0));
-          if (ex.check()) h = ex();
-          else h = Vector3(m._getReal(0),0,0); 
+          if (is<Vector3>(m.getAt(0)))
+              h = get<Vector3>(m.getAt(0));
+          else
+              h = Vector3(m._getReal(0),0,0);
           break;
       }
       case 2:  
        {
-            bp::extract<Vector3> ex (m.getAt(0));
-		    if (ex.check()) {
-                  h = ex();
+            if (is<Vector3>(m.getAt(0))) {
+                  h = get<Vector3>(m.getAt(0));
                   u = m._get<Vector3>(1);
                   withu = true;
             }
-		    else h = Vector3(m._getReal(0),m._getReal(1)); 
+            else
+                h = Vector3(m._getReal(0),m._getReal(1));
             break;
        }
       case 3:
@@ -586,7 +619,8 @@ DeclareModuleEnd
 
 DeclareModuleBegin(incWidth,"Increase the current line width or set it if a parameter is given. Params : 'width' (optional).",eWidth)
 {
-	if (m.empty())t.incWidth();
+    t.warning("Increase width");
+    if (m.empty())t.incWidth();
 	else t.setWidth(m._getReal(0));
 }
 DeclareModuleEnd
@@ -614,7 +648,8 @@ DeclareModuleEnd
 
 DeclareModuleBegin(decColor,"Decrease the current material index or set it if a parameter is given. Params : 'index' (optional, positive int).",eColor)
 {
-	if (m.empty())t.decColor();
+    t.warning("Decrese Material Index");
+    if (m.empty())t.decColor();
 	else t.setColor(m._getInt(0));
 }
 DeclareModuleEnd
@@ -625,9 +660,10 @@ DeclareModuleBegin(setColor,"Set the current material. Params : 'index' (positiv
     else {
         int nbatt = m.size();
         if (nbatt == 1) {
-            boost::python::extract<PGL::AppearancePtr>  appextractor(m.getAt(0));
-            if (appextractor.check()) t.setCustomAppearance(appextractor());
-            else t.setColor(m._getInt(0));
+            if (is<AppearancePtr>(m.getAt(0)))
+                t.setCustomAppearance(get<AppearancePtr>(m.getAt(0)));
+            else
+                t.setColor(m._getInt(0));
         }
         else if (nbatt >= 3) {
             Material * mat = new Material(Color3(m._get<uchar_t>(0),m._get<uchar_t>(1),m._get<uchar_t>(2)),1);
@@ -672,9 +708,11 @@ DeclareModuleBegin(textureBaseColor,"Set the base color of the texture. Params :
     if(!m.empty()) {
         int nbatt = m.size();
         if (nbatt == 1) {
-            boost::python::extract<PGL::MaterialPtr>  appextractor(m.getAt(0));
-            if (appextractor.check()) t.setTextureBaseColor(Color4(appextractor()->getDiffuseColor(), appextractor()->getTransparency()));
-            else t.setTextureBaseColor(m._getInt(0));
+            if (is<MaterialPtr>(m.getAt(0)))
+                t.setTextureBaseColor(Color4(get<MaterialPtr>(m.getAt(0))->getDiffuseColor(),
+                                             get<MaterialPtr>(m.getAt(0))->getTransparency()));
+            else
+                t.setTextureBaseColor(m._getInt(0));
         }
         else if (nbatt >= 3) {
             Color4 c(m._get<uchar_t>(0),m._get<uchar_t>(1),m._get<uchar_t>(2),0);
@@ -758,40 +796,42 @@ DeclareModuleBegin(pglshape,"Draw a geometry at the turtle's current location an
 		if (pg) {
 #if PGL_VERSION >= 0x020701
 			if (m.size() == 1){
-                boost::python::extract<PGL::GeometryPtr>  geomextractor(m.getAt(0));
-				if(geomextractor.check())pg->customGeometry(geomextractor());
-                else {
-                    boost::python::extract<PGL::AppearancePtr>  appextractor(m.getAt(0));
-                    if (appextractor.check()) pg->setCustomAppearance(appextractor());
-                    else {
-                        boost::python::extract<PGL::ShapePtr>  shextractor(m.getAt(0));
-                        if (shextractor.check()) {
-                            PGL::ShapePtr sh = shextractor();
-                            pg->setCustomAppearance(sh->getAppearance());
-                            pg->customGeometry(sh->getGeometry());
-                            pg->removeCustomAppearance();
-                        }
-                        else {
-                            boost::python::extract<PGL::ScenePtr>  scextractor(m.getAt(0));
-                            if (scextractor.check()) {
-                                PGL::ScenePtr sc = scextractor();
-                                for(Scene::const_iterator it = sc->begin(); it != sc->end(); ++it){
-                                    PGL::ShapePtr sh = dynamic_pointer_cast<PGL::Shape>(*it);
-                                    if (sh) {
-                                        pg->setCustomAppearance(sh->getAppearance());
-                                        pg->customGeometry(sh->getGeometry());
-                                    }
-                                }
-                                pg->removeCustomAppearance();
-                            }
-                            else { LsysWarning("Cannot find geometry for module "+m.name()); }
-                        }
-
+                LpyObject & o = m.getAt(0);
+                switch(getType(o))
+                {
+                    case LPY_GEOMETRY:
+                        pg->customGeometry(get<GeometryPtr>(o));
+                        break;
+                    case LPY_APPEARANCE:
+                        pg->setCustomAppearance(get<AppearancePtr>(o));
+                        break;
+                    case LPY_SHAPE:
+                    {
+                        PGL::ShapePtr sh = get<ShapePtr>(o);
+                        pg->setCustomAppearance(sh->getAppearance());
+                        pg->customGeometry(sh->getGeometry());
+                        pg->removeCustomAppearance();
+                        break;
                     }
+                    case LPY_SCENE:
+                    {
+                        PGL::ScenePtr sc = get<ScenePtr>(o);
+                        for(Scene::const_iterator it = sc->begin(); it != sc->end(); ++it){
+                            PGL::ShapePtr sh = dynamic_pointer_cast<PGL::Shape>(*it);
+                            if (sh) {
+                                pg->setCustomAppearance(sh->getAppearance());
+                                pg->customGeometry(sh->getGeometry());
+                            }
+                        }
+                        pg->removeCustomAppearance();
+                        break;
+                    }
+                    default:
+                        LsysWarning("Cannot find geometry for module " + m.name());
                 }
             }
 			else 
-				pg->customGeometry(boost::python::extract<PGL::GeometryPtr>(m.getAt(0))(),m._getReal(1));
+                pg->customGeometry(get<GeometryPtr>(m.getAt(0)),m._getReal(1));
 #else
 #ifdef _MSC_VER
 #pragma message("Second argument of @g will be disabled. Upgrade PlantGL.")
@@ -847,17 +887,17 @@ DeclareModuleBegin(tropism,"Set Tropism. Params : 'tropism' (optional, Vector3, 
 	size_t nbargs = m.size();
 	switch (nbargs) {
 		case 0: t.setTropism(); break;
-		case 1:{
-			bp::extract<Vector3> ex (m.getAt(0));
-			if (ex.check()) t.setTropism(ex()); 
-			else t.setTropism(m._getReal(0));
-			   }
+        case 1:
+            if (is<Vector3>(m.getAt(0)))
+                t.setTropism(get<Vector3>(m.getAt(0)));
+            else
+                t.setTropism(m._getReal(0));
 			break;
-		case 2:{
-			bp::extract<Vector2> ex (m.getAt(0));
-			if (ex.check()) t.setTropism(Vector3(ex(),0)); 
-			else t.setTropism(m._getReal(0),m._getReal(1));	
-			   }
+        case 2:
+            if (is<Vector2>(m.getAt(0)))
+                t.setTropism(Vector3(get<Vector2>(m.getAt(0)),0));
+            else
+                t.setTropism(m._getReal(0),m._getReal(1));
 			break;
 		case 3:
 		default:
@@ -873,10 +913,10 @@ DeclareModuleBegin(setcontour,"Set Cross Section of Generalized Cylinder. Params
 	switch (nbargs) {
 		case 0: LsysWarning("missing argument to SetContour"); break;
 		case 1:
-			t.setCrossSection(bp::extract<Curve2DPtr>(m.getAt(0))()); 
+            t.setCrossSection(get<Curve2DPtr>(m.getAt(0)));
 			break;
 		case 2:
-			t.setCrossSection(bp::extract<Curve2DPtr>(m.getAt(0))(),bp::extract<bool>(m.getAt(1))()); 
+            t.setCrossSection(get<Curve2DPtr>(m.getAt(0)),get<bool>(m.getAt(1)));
 			break;
 	}
 }
@@ -905,13 +945,16 @@ DeclareModuleBegin(setguide,"Set Guide for turtle tracing. Params : 'Curve[2D|3D
 		case 1: 			
 			LsysWarning("missing argument to SetGuide"); break;
 		default:
-			bp::extract<Curve2DPtr> ec2d(m.getAt(0));
-			if (ec2d.check()) {
-				if(nbargs == 2) t.setGuide(ec2d(),m._getReal(1)); 
-				else if(nbargs == 3) t.setGuide(ec2d(),m._getReal(1),bp::extract<bool>(m.getAt(2))); 
-				else t.setGuide(ec2d(),m._getReal(1),bp::extract<bool>(m.getAt(2)),bp::extract<bool>(m.getAt(3))); 
+            if (is<Curve2DPtr>(m.getAt(0))) {
+                if(nbargs == 2)
+                    t.setGuide(get<Curve2DPtr>(m.getAt(0)),m._getReal(1));
+                else if(nbargs == 3)
+                    t.setGuide(get<Curve2DPtr>(m.getAt(0)),m._getReal(1),get<bool>(m.getAt(2)));
+                else
+                    t.setGuide(get<Curve2DPtr>(m.getAt(0)),m._getReal(1),get<bool>(m.getAt(2)),get<bool>(m.getAt(3)));
 			}
-			else t.setGuide(bp::extract<LineicModelPtr>(m.getAt(0))(),m._getReal(1)); 
+            else
+                t.setGuide(get<LineicModelPtr>(m.getAt(0)),m._getReal(1));
 			break;
 	}
 #endif
@@ -953,23 +996,26 @@ DeclareModuleBegin(sweep,"Produce a sweep surface. Params : 'path, section, leng
 			LsysWarning("missing argument to sweep"); break;
 		case 4:
             {
-			    bp::extract<Curve2DPtr> ec2d(m.getAt(0));
-			    if (ec2d.check()) t.sweep(ec2d(), bp::extract<Curve2DPtr>(m.getAt(1))(),m._getReal(2),m._getReal(3)); 
-			    else t.sweep(bp::extract<LineicModelPtr>(m.getAt(0))(), bp::extract<Curve2DPtr>(m.getAt(1))(),m._getReal(2),m._getReal(3)); 
+                if (is<Curve2DPtr>(m.getAt(0)))
+                    t.sweep(get<Curve2DPtr>(m.getAt(0)), get<Curve2DPtr>(m.getAt(1)), m._getReal(2), m._getReal(3));
+                else
+                    t.sweep(get<LineicModelPtr>(m.getAt(0)), get<Curve2DPtr>(m.getAt(1)), m._getReal(2), m._getReal(3));
             }
             break;
 		case 5:
             {
-			    bp::extract<Curve2DPtr> ec2d(m.getAt(0));
-			    if (ec2d.check()) t.sweep(ec2d(), bp::extract<Curve2DPtr>(m.getAt(1))(),m._getReal(2),m._getReal(3),m._getReal(4)); 
-			    else t.sweep(bp::extract<LineicModelPtr>(m.getAt(0))(), bp::extract<Curve2DPtr>(m.getAt(1))(),m._getReal(2),m._getReal(3),m._getReal(4)); 
+                if (is<Curve2DPtr>(m.getAt(0)))
+                    t.sweep(get<Curve2DPtr>(m.getAt(0)), get<Curve2DPtr>(m.getAt(1)), m._getReal(2), m._getReal(3), m._getReal(4));
+                else
+                    t.sweep(get<LineicModelPtr>(m.getAt(0)), get<Curve2DPtr>(m.getAt(1)), m._getReal(2), m._getReal(3), m._getReal(4));
             }
             break;
 		default:
             {
-			    bp::extract<Curve2DPtr> ec2d(m.getAt(0));
-			    if (ec2d.check()) t.sweep(ec2d(), bp::extract<Curve2DPtr>(m.getAt(1))(),m._getReal(2),m._getReal(3),m._getReal(4),bp::extract<QuantisedFunctionPtr>(m.getAt(5))()); 
-			    else t.sweep(bp::extract<LineicModelPtr>(m.getAt(0))(), bp::extract<Curve2DPtr>(m.getAt(1))(),m._getReal(2),m._getReal(3),m._getReal(4),bp::extract<QuantisedFunctionPtr>(m.getAt(5))()); 
+                if (is<Curve2DPtr>(m.getAt(0)))
+                    t.sweep(get<Curve2DPtr>(m.getAt(0)), get<Curve2DPtr>(m.getAt(1)), m._getReal(2), m._getReal(3), m._getReal(4), get<QuantisedFunctionPtr>(m.getAt(5)));
+                else
+                    t.sweep(get<LineicModelPtr>(m.getAt(0)), get<Curve2DPtr>(m.getAt(1)), m._getReal(2), m._getReal(3), m._getReal(4), get<QuantisedFunctionPtr>(m.getAt(5)));
             }
 			break;
 	}
@@ -1057,9 +1103,10 @@ DeclareModuleBegin(TextureRotation,"Set the rotation for texture application. Pa
          case 1:  t.setTextureRotation(m._getReal(0));  break;
 		 case 2:
              {
-               bp::extract<Vector2> ex(m.getAt(1));
-               if (ex.check())t.setTextureRotation(m._getReal(0),ex()); 
-               else t.setTextureRotation(m._getReal(0),m._getReal(1)); 
+               if (is<Vector2>(m.getAt(1)))
+                   t.setTextureRotation(m._getReal(0),get<Vector2>(m.getAt(1)));
+               else
+                   t.setTextureRotation(m._getReal(0),m._getReal(1));
                break;
              }
          default:  
@@ -1077,18 +1124,21 @@ DeclareModuleBegin(TextureTransformation,"Set the transformation for texture app
 	if (nbargs < 4)LsysWarning("missing argument to TextureCoeff"); 
 	if (nbargs == 4)
     {
-        bp::extract<Vector2> ex(m.getAt(0));
-        if (ex.check()){
-            Vector2 s = ex();
-            if (fabs(s.x()) < GEOM_EPSILON || fabs(s.y()) < GEOM_EPSILON) LsysWarning("invalid argument to TextureTransformation. Should be non null.");
+        if (is<Vector2>(m.getAt(0))){
+            Vector2 s = get<Vector2>(m.getAt(0));
+            if (fabs(s.x()) < GEOM_EPSILON || fabs(s.y()) < GEOM_EPSILON)
+                LsysWarning("invalid argument to TextureTransformation. Should be non null.");
             t.setTextureTransformation(s,m._get<Vector2>(1),m._getReal(2),m._get<Vector2>(3)); 
         }
     	else {
-             if (nbargs < 7)LsysWarning("missing argument to TextureCoeff"); 
+             if (nbargs < 7)
+                 LsysWarning("missing argument to TextureCoeff");
 			 real_t valueU = m._getReal(0);
 			 real_t valueV = m._getReal(1);
-			 if (fabs(valueU) < GEOM_EPSILON || fabs(valueV) < GEOM_EPSILON) LsysWarning("invalid argument to TextureTransformation. Should be non null.");
-			 else t.setTextureTransformation(valueU,valueV,m._getReal(2),m._getReal(3),m._getReal(4),m._getReal(5),m._getReal(6)); 
+             if (fabs(valueU) < GEOM_EPSILON || fabs(valueV) < GEOM_EPSILON)
+                 LsysWarning("invalid argument to TextureTransformation. Should be non null.");
+             else
+                 t.setTextureTransformation(valueU,valueV,m._getReal(2),m._getReal(3),m._getReal(4),m._getReal(5),m._getReal(6));
         }
 	}
 }

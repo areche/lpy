@@ -28,20 +28,28 @@
  # ---------------------------------------------------------------------------
  */
 
-#include "lsystem.h"
-#include "matching.h"
 #include "lpy_parser.h"
+#include "error.h"
+#include "moduleclass.h"
+#include "matching.h"
+#include "lsyscontext.h"
+
+#ifndef UNITY_MODULE
+#include "lsystem.h"
 #include <plantgl/tool/util_string.h>
 #include <plantgl/python/extract_list.h>
 #include <QtCore/QFileInfo>
 
 using namespace boost::python;
+#endif
+
+#ifndef UNITY_MODULE
 TOOLS_USING_NAMESPACE
 PGL_USING_NAMESPACE
+#endif
 LPY_USING_NAMESPACE
 
 /*---------------------------------------------------------------------------*/
-
 #ifdef MULTI_THREADED_LSYSTEM
 #define ACQUIRE_RESSOURCE  LsysAcquirer ressource(this); 
 #define RELEASE_RESSOURCE  
@@ -219,8 +227,10 @@ std::string::const_iterator next_token(std::string::const_iterator _it2,
 
 /*---------------------------------------------------------------------------*/
 
+#define WindowSpecificEndline 13
 
 /*---------------------------------------------------------------------------*/
+#ifndef UNITY_MODULE
 
 float LpyParsing::getFormatVersion(const std::string& lcode) {
   std::string::const_iterator it = lcode.begin();
@@ -257,7 +267,6 @@ float LpyParsing::getFormatVersion(std::string::const_iterator& it, std::string:
 #define LsysParserSyntaxError(msg) LsysSyntaxError(msg,filename,lineno)
 #define LsysParserWarning(msg) LsysWarning(msg,filename,lineno)
 
-#define WindowSpecificEndline 13
 
 size_t LsysContext::initialiseFrom(const std::string& _lcode)
 {
@@ -1410,6 +1419,7 @@ std::string LpyParsing::lstring2pyparam( std::string::const_iterator& beg,
   result = "(" + TOOLS(number)(id) + result + complementcode+ ")";
   return result;
 }
+#endif
 
 
 /*---------------------------------------------------------------------------*/
@@ -1528,11 +1538,13 @@ LpyParsing::parselstring( std::string::const_iterator& beg,
   while(_it != endpos && *_it != delim){
 	if(*_it == '#') {// skip comments
 		++_it;
+#ifndef UNITY_MODULE
 		if(LsysContext::current()->warnWithSharpModule()){
 		    while(_it != endpos && (*_it == ' ' || *_it == '\t'))++_it;
 			if(_it != endpos && *_it == '(') LsysSyntaxError("Found symbol '#' after Lstring. Considered as begining of comments in Lpy (Compatibility pb with cpfg). Use '_' instead.","",lineno);
 			else LsysWarning("Found symbol '#' after Lstring. Considered as begining of comments","",lineno);
 		}
+#endif
 		while(_it != endpos && *_it != '\n' && *_it != delim)++_it;
 	}
 	else if(*_it == '(')
@@ -1558,7 +1570,7 @@ LpyParsing::parselstring( std::string::const_iterator& beg,
 }
 
 /*---------------------------------------------------------------------------*/
-
+#ifndef UNITY_MODULE
 LpyParsing::ModDeclarationList 
 LpyParsing::parse_moddeclist(std::string::const_iterator& beg,
 						  std::string::const_iterator endpos,
@@ -1741,6 +1753,7 @@ std::vector<std::string> LpyParsing::parse_arguments(std::string::const_iterator
 	}
 	return result;
 }
+#endif
 
 bool LpyParsing::isValidVariableName(std::string::const_iterator beg,
 						 			 std::string::const_iterator end)
@@ -1762,6 +1775,7 @@ bool LpyParsing::isValidVariableName(std::string::const_iterator beg,
 	return b;
 }
 
+#ifndef UNITY_MODULE
 std::pair<std::string,std::string> LpyParsing::parse_variable(std::string::const_iterator beg,
 						 						             std::string::const_iterator end,
 															 int lineno)
@@ -1823,3 +1837,4 @@ bool LpyParsing::isAConstant(std::string::const_iterator beg,
 	else if(std::distance(it,end) > 4 && std::string(it,end) == "None") return true;
 	return false;
 }
+#endif

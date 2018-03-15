@@ -36,7 +36,6 @@
 #include <functional>
 #include <plantgl/python/exception.h>
 
-
 LPY_BEGIN_NAMESPACE
 
 /*---------------------------------------------------------------------------*/
@@ -68,5 +67,3 @@ LPY_API void LsysWarning(const std::string& error,const std::string& filename, i
 LPY_END_NAMESPACE
 
 #endif
-
-

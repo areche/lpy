@@ -1,5 +1,8 @@
 #include "modulevtable.h"
+#include "moduleclass.h"
+#ifndef UNITY_MODULE
 #include "lsyscontext.h"
+#endif
 #include "tracker.h"
 
 
@@ -20,7 +23,9 @@ BaseModuleProperty::~BaseModuleProperty() { DecTracker(ModuleProperty) }
 ModuleVTable::ModuleVTable(ModuleClassPtr owner, ModuleClassPtr base) : 
 __owner(owner.get()), __modulebases(is_null_ptr(base)?0:1,base.get()), scale(ModuleClass::DEFAULT_SCALE)  
 { 
+#ifndef UNITY_MODULE
 	LsysContext::current()->__modulesvtables.push_back(ModuleVTablePtr(this));
+#endif
 	IncTracker(ModuleVTable)
 	if(!__modulebases.empty()) updateInheritedParameters();
 }

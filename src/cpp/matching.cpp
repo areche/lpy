@@ -30,19 +30,21 @@
 
 #include "matching.h"
 #include "patternmodule.h"
+#include "argcollector_core.h"
+
+#ifndef UNITY_MODULE
 #include "axialtree_manip.h"
 #include "matching_tmpl.h"
 #include <boost/python.hpp>
-#include "argcollector_core.h"
+#endif
 
 LPY_BEGIN_NAMESPACE
 
 /*---------------------------------------------------------------------------*/
 MatchingEngine::eModuleMatchingMethod 
 MatchingEngine::ModuleMatchingMethod = MatchingEngine::eDefaultModuleMatching;
-
+#ifndef UNITY_MODULE
 MatchingEngine::ModuleMatchingFuncType MatchingEngine::ModuleMatchingFunc = &MatchingImplementation::module_matching_with_star_and_valueconstraints;
-
 
 void MatchingEngine::setModuleMatchingMethod(MatchingEngine::eModuleMatchingMethod method)
 { 
@@ -56,11 +58,12 @@ void MatchingEngine::setModuleMatchingMethod(MatchingEngine::eModuleMatchingMeth
 		ModuleMatchingFunc = &MatchingImplementation::module_matching_with_star_and_valueconstraints; break;
 	}
 }
+#endif
 
 MatchingEngine::eModuleMatchingMethod LPY::MatchingEngine::getModuleMatchingMethod()
 { return ModuleMatchingMethod; }
 
-
+#ifndef UNITY_MODULE
 MatchingEngine::eStringMatchingMethod 
 MatchingEngine::StringMatchingMethod = MatchingEngine::eDefaultStringMatching;
 
@@ -196,18 +199,22 @@ bool MatchingEngine::left_match(AxialTree::const_iterator  matching_start,
 
 /*---------------------------------------------------------------------------*/
 
+#endif
 
 inline bool same_name(const ParamModule& module, const PatternModule& pattern){
 	return module.sameName(pattern);
 }
 
+#ifndef UNITY_MODULE
 inline bool isinstance(const ParamModule& module, const PatternModule& pattern){
 	return module.isinstance(pattern.getClass());
 }
+#endif
 
 typedef bool (*COMPAREMODULE)(const ParamModule&, const PatternModule&);
 static COMPAREMODULE compatibleName = &same_name;
 
+#ifndef UNITY_MODULE
 
 inline bool same_class(const ModuleClassPtr& module, const ModuleClassPtr& pattern){
 	return module == pattern;
@@ -485,7 +492,7 @@ bool MatchingImplementation::module_matching_with_star_and_valueconstraints(
 	    if(v.isArgs()) { 
 			ArgList largs;
 			if(v.isNamed() || v.hasCondition()){ // if necessary we retrieve the args
-				ArgsCollector::append_arg(largs,bp::object(module.name()));
+                ArgsCollector::append_arg(largs,LpyObject(module.name()));
 				ArgsCollector::append_modargs(largs,module.getParameterList()); 
 			}
             // we check the condition
@@ -579,7 +586,7 @@ bool MatchingImplementation::module_matching_with_star_and_valueconstraints(
       // retrieve normal parameters
       for(int i = 0; i < normalparam; i++) {
         const LsysVar& v = pattern.getAt(i+1);
-        if(!v.isCompatible(module.getAt(i))) return false; 
+        if(!v.isCompatible(module.getAt(i))) return false;
         if(v.isNamed())ArgsCollector::append_arg_ref(l,module.getAt(i));
       }
 
@@ -603,7 +610,7 @@ bool MatchingImplementation::module_matching_with_star_and_valueconstraints(
                       argvalue = module.getSlice(normalparam,lastarrayarg);
               }
           }
-          if(!varg.isCompatible(argvalue)) return false; 
+          if(!varg.isCompatible(argvalue)) return false;
           if (varg.isNamed())ArgsCollector::append_arg(l,argvalue);
 
       }
@@ -617,7 +624,7 @@ bool MatchingImplementation::module_matching_with_star_and_valueconstraints(
             int startkwd = std::max<int>(0,normalparam - std::max<int>(0, modulesize-module.getNamedParameterNb()));
             module.getNamedParameters(kwdvalue, startkwd);
           }
-          if(!vlast.isCompatible(kwdvalue)) return false; 
+          if(!vlast.isCompatible(kwdvalue)) return false;
           if (vlast.isNamed())ArgsCollector::append_arg(l,kwdvalue);
       }
 
@@ -760,7 +767,7 @@ bool MatchingImplementation::module_matching_with_star_and_valueconstraints(
       // retrieve normal parameters
       for(int i = 0; i < normalparam; i++) {
         const LsysVar& v = pattern.getAt(i);
-        if(!v.isCompatible(module.getAt(i))) return false; 
+        if(!v.isCompatible(module.getAt(i))) return false;
         if(v.isNamed())ArgsCollector::append_arg_ref(l,module.getAt(i));
       }
 
@@ -784,7 +791,7 @@ bool MatchingImplementation::module_matching_with_star_and_valueconstraints(
                       argvalue = module.getSlice(normalparam,lastarrayarg);
               }
           }
-          if(!varg.isCompatible(argvalue)) return false; 
+          if(!varg.isCompatible(argvalue)) return false;
           if (varg.isNamed())ArgsCollector::append_arg(l,argvalue);
       }
 
@@ -797,7 +804,7 @@ bool MatchingImplementation::module_matching_with_star_and_valueconstraints(
             int startkwd = std::max<int>(0,normalparam - std::max<int>(0, modulesize-module.getNamedParameterNb()));
             module.getNamedParameters(kwdvalue, startkwd);
           }
-          if(!vlast.isCompatible(kwdvalue)) return false; 
+          if(!vlast.isCompatible(kwdvalue)) return false;
           if (vlast.isNamed())ArgsCollector::append_arg(l,kwdvalue);
       }
       return true;
@@ -843,10 +850,11 @@ bool MatchingImplementation::module_matching_with_star_and_valueconstraints(
 	return true;*/
   }
 }
+#endif
 
 /*---------------------------------------------------------------------------*/
 
-
+#ifndef UNITY_MODULE
 bool MatchingImplementation::string_exact_match(AxialTree::const_iterator  matching_start,
 						   AxialTree::const_iterator  string_begin,
 						   AxialTree::const_iterator  string_end,
@@ -998,6 +1006,7 @@ bool MatchingImplementation::mltree_right_match(AxialTree::const_iterator  match
 	return TreeRightMatcher<GetLevelSuccessor>::
 		match(matching_start, string_beg, string_end, pattern_begin, pattern_end, last_matched, matching_end, filter, params, itermap);
 }
+#endif
 
 LPY_END_NAMESPACE
 

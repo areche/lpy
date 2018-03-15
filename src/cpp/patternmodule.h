@@ -47,8 +47,9 @@ class LPY_API LsysVar {
 	};
 
 	LsysVar(const std::string&);
-	LsysVar(boost::python::object value);
-
+#ifndef UNITY_MODULE
+    LsysVar(boost::python::object value);
+#endif
 	std::string str() const;
     inline const char * c_str() const { return str().c_str(); }
 
@@ -56,14 +57,17 @@ class LPY_API LsysVar {
 	inline void setName(const std::string& n) { __name = n; }
 
 	std::string varname() const;
-	bool isCompatible(const boost::python::object& value) const;
-	void setCondition(const std::string& textualcondition, int lineno = -1);
+#ifndef UNITY_MODULE
+    bool isCompatible(const boost::python::object& value) const;
+#endif
+    void setCondition(const std::string& textualcondition, int lineno = -1);
 
 	inline std::string textualcondition() const { return __textualcondition; }
 	inline bool operator==(const LsysVar& other) const { return __name == other.__name; }
 
-	inline const boost::python::object& getPyValue() const { return __pyvalue; }
-
+#ifndef UNITY_MODULE
+    inline const boost::python::object& getPyValue() const { return __pyvalue; }
+#endif
     inline bool isNamed() const { return !(__name.empty() || __name[0] == '-' || 
 		                                   (__name[0] == '*' && ( __name[1] == '-' || (__name[1] == '*' && __name[2] == '-')))); }
 	inline bool isArgs() const { return !__name.empty() && __name[0] == '*' && (__name.end() == __name.begin()+1 ||__name[1] != '*'); }
@@ -77,8 +81,9 @@ class LPY_API LsysVar {
 	std::string __name;
 	ConditionType __conditionType;
 	std::string __textualcondition;
-	boost::python::object __pyvalue;
-
+#ifndef UNITY_MODULE
+    boost::python::object __pyvalue;
+#endif
 };
 
 /*---------------------------------------------------------------------------*/
@@ -106,6 +111,15 @@ public:
   bool match(const ParamModule&m, ArgList&) const;
   bool match(const std::string&, size_t nbargs) const;*/
 
+#ifndef UNITY_MODULE
+  std::string strArg() const override {
+      boost::python::str res(",");
+      boost::python::list argstr;
+      for (const_iterator it = __constargs().begin(); it != __constargs().end(); ++it)
+          argstr.append(boost::python::str(*it));
+      return boost::python::extract<std::string>(res.join(argstr));
+  }
+#endif
 protected:
   void __processPatternModule(const std::string& argstr, int lineno = -1);
 

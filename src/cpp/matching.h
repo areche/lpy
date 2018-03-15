@@ -32,8 +32,11 @@
 #define __matching_h__
 
 #include "axialtree.h"
+
+#ifndef UNITY_MODULE
 #include "patternstring.h"
 #include <boost/python.hpp>
+#endif
 
 LPY_BEGIN_NAMESPACE
 
@@ -49,9 +52,10 @@ public:
 			eDefaultModuleMatching = eMWithStarNValueConstraint
 	  };
 
-  static void setModuleMatchingMethod(eModuleMatchingMethod);
   static eModuleMatchingMethod getModuleMatchingMethod();
 
+#ifndef UNITY_MODULE
+  static void setModuleMatchingMethod(eModuleMatchingMethod);
   static void setInheritanceModuleMatchingActivated(bool b);
   static bool isInheritanceModuleMatchingActivated();
 
@@ -65,12 +69,15 @@ public:
 
   static void setStringMatchingMethod(eStringMatchingMethod);
   static eStringMatchingMethod getStringMatchingMethod();
+#endif
 
 private:
   static eModuleMatchingMethod ModuleMatchingMethod;
-  static eStringMatchingMethod StringMatchingMethod;
   typedef bool (*ModuleMatchingFuncType)(const ParamModule&, const PatternModule&, ArgList&);
   static ModuleMatchingFuncType ModuleMatchingFunc;
+
+#ifndef UNITY_MODULE
+  static eStringMatchingMethod StringMatchingMethod;
 
   typedef bool (*RightMatchingFuncType)(AxialTree::const_iterator, AxialTree::const_iterator, AxialTree::const_iterator,
 										PatternString::const_iterator, PatternString::const_iterator,
@@ -131,24 +138,26 @@ public:
 					AxialTree::const_iterator& matching_end,
                     const ConsiderFilterPtr filter,
 					ArgList& params, AxialTree::IteratorMap* itermap = NULL);
+#endif
 };
 
 /*---------------------------------------------------------------------------*/
 
 class LPY_API MatchingImplementation : public MatchingEngine {
 public:
-	static bool simple_module_matching(const ParamModule& module, 
+#ifndef UNITY_MODULE
+    static bool simple_module_matching(const ParamModule& module,
 									   const PatternModule& pattern, 
 									   ArgList& l);
 
 	static bool module_matching_with_star(const ParamModule& module, 
 									      const PatternModule& pattern, 
 									      ArgList& l);
-
+#endif
 	static bool module_matching_with_star_and_valueconstraints(const ParamModule& module, 
 									      const PatternModule& pattern, 
 									      ArgList& l);
-
+#ifndef UNITY_MODULE
 	static bool string_exact_match(AxialTree::const_iterator  matching_start,
 						     AxialTree::const_iterator  string_begin,
 		                     AxialTree::const_iterator  string_end,
@@ -243,6 +252,7 @@ public:
 								 AxialTree::const_iterator& matching_end,
                                  const ConsiderFilterPtr filter,
 								 ArgList& params, AxialTree::IteratorMap* itermap = NULL);
+#endif
 };
 
 /*---------------------------------------------------------------------------*/

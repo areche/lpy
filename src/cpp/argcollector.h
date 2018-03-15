@@ -31,47 +31,35 @@
 #ifndef __arg_collector_h__
 #define __arg_collector_h__
 
-#include <plantgl/python/boost_python.h>
-
-#ifndef bp
-#define bp boost::python
-#endif
+#include "lpy_variant.h"
 
 LPY_BEGIN_NAMESPACE
 
 /*---------------------------------------------------------------------------*/
-// #define USE_PYTHON_LIST_COLLECTOR
 
-typedef bp::list DefaultArgType; 
-inline boost::python::list toPyList( bp::list obj ) { return obj; }
+inline LpyObjectList toPyList( LpyObjectList obj ) { return obj; }
 
-#ifndef USE_PYTHON_LIST_COLLECTOR
-#define USE_OBJECTVEC_COLLECTOR
-#endif
-
-typedef std::deque<boost::python::object> StdArgListType;
-inline size_t len( const StdArgListType& obj ) { return obj.size(); }
-inline boost::python::object toPyList( const StdArgListType& obj ) {
-	return boost::python::object(obj);
+inline size_t len( const LpyObjectDeque& obj ) { return obj.size(); }
+inline LpyObject toPyList( const LpyObjectDeque& obj ) {
+    return LpyObject(obj);
 }
 
-inline boost::python::dict toPyDict( const StdArgListType& obj, const std::vector<std::string> names ) {
-	StdArgListType::const_iterator itobj = obj.begin();
+inline LpyObjectMap toPyDict( const LpyObjectDeque& obj, const std::vector<std::string> names ) {
+    LpyObjectDeque::const_iterator itobj = obj.begin();
 	
-	boost::python::dict result;
-	for(std::vector<std::string>::const_iterator itname = names.begin(); itname != names.end() && itobj != obj.end(); ++itobj, ++itname)
-		result[*itname] = *itobj;
+    LpyObjectMap result;
+    for(std::vector<std::string>::const_iterator itname = names.begin(); itname != names.end() && itobj != obj.end(); ++itobj, ++itname)
+        result[*itname] = *itobj;
 
-	return result;
+    return result;
 }
-
 
 
 class LPY_API PyObjRef {
 public:
 	PyObjRef(): __toDelete(false), __object(NULL) {}
 
-	PyObjRef(const boost::python::object& obj , bool owner = true):
+    PyObjRef(const LpyObject& obj , bool owner = true):
 		__toDelete(owner), __object(owner?NULL:&obj) 
 		{ if(owner)copy_obj(obj); }
 
@@ -89,16 +77,20 @@ public:
 
 	~PyObjRef() { if(__toDelete  && __object) delete __object; }
 
-	inline const boost::python::object& get() const { return *__object; }
+    inline const LpyObject& get() const { return *__object; }
 
 private:
 
-	inline void copy_obj(const boost::python::object& obj) {
-			__object = new bp::object(bp::handle<>(bp::borrowed<>(obj.ptr()))); 
+    inline void copy_obj(const LpyObject& obj) {
+#ifndef USING_PYTHON
+            __object = new LpyObject(obj);
+#else
+            __object = new LpyObject(boost::python::handle<>(boost::python::borrowed<>(obj.ptr())));
+#endif
 	}
 
 	bool __toDelete;
-    const boost::python::object * __object;
+    const LpyObject * __object;
 };
 
 class LPY_API ArgRefList {
@@ -108,14 +100,14 @@ public:
 	inline size_t size() const { return __data.size(); }
 	inline bool empty() const { return __data.empty(); }
 	inline void reserve(size_t s) { __data.reserve(s); }
-	inline const boost::python::object& operator[](size_t i) const { return __data[i].get(); }
-	inline void push_back(const boost::python::object& obj){ __data.push_back(PyObjRef(obj,true)); }
-	inline void push_back_ref(const boost::python::object& obj){ __data.push_back(PyObjRef(obj,false)); }
+    inline const LpyObject& operator[](size_t i) const { return __data[i].get(); }
+    inline void push_back(const LpyObject& obj){ __data.push_back(PyObjRef(obj,true)); }
+    inline void push_back_ref(const LpyObject& obj){ __data.push_back(PyObjRef(obj,false)); }
 	inline void append(const ArgRefList& l) { __data.insert(__data.end(),l.__data.begin(),l.__data.end()); }
 	inline void prepend(const ArgRefList& l) { __data.insert(__data.begin(),l.__data.begin(),l.__data.end()); }
-	inline boost::python::list toPyList() const {
-		boost::python::list res;
-		for(std::vector<PyObjRef>::const_iterator it = __data.begin(); it != __data.end(); ++it)  res.append(it->get());
+    inline LpyObjectList toPyList() const {
+        LpyObjectList res;
+        for(std::vector<PyObjRef>::const_iterator it = __data.begin(); it != __data.end(); ++it)  addToList(res,it->get());
 		return res;
 	}
 
@@ -123,14 +115,14 @@ protected:
 	std::vector<PyObjRef> __data;
 };
 
-inline boost::python::list toPyList( const ArgRefList& obj ) { return obj.toPyList(); }
+inline LpyObjectList toPyList( const ArgRefList& obj ) { return obj.toPyList(); }
 inline size_t len( const ArgRefList& obj ) { return obj.size(); }
 
 #ifdef USE_PYTHON_LIST_COLLECTOR
 typedef bp::list ArgList;
 #else
 #ifdef USE_OBJECTVEC_COLLECTOR
-typedef StdArgListType ArgList;
+typedef LpyObjectDeque ArgList;
 #else
 typedef ArgRefList ArgList;
 #endif

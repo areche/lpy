@@ -2,10 +2,10 @@
 #define __module_vtable_h__
 
 #include "error.h"
+#include "lpy_variant.h"
 #include <plantgl/tool/util_hashmap.h>
 #include <plantgl/tool/util_hashset.h>
 #include <plantgl/tool/rcobject.h>
-#include <boost/python.hpp>
 #include <vector>
 
 /*---------------------------------------------------------------------------*/
@@ -37,10 +37,10 @@ public:
   
 };
 
-class LPY_API ModulePyProperty : public ModuleProperty<boost::python::object> {
+class LPY_API ModulePyProperty : public ModuleProperty<LpyObject> {
 public:
-	ModulePyProperty(const std::string& name, boost::python::object _value) : 
-		ModuleProperty< boost::python::object > ( name, _value) {}
+    ModulePyProperty(const std::string& name, LpyObject _value) :
+        ModuleProperty< LpyObject > ( name, _value) {}
 
 	virtual bool isPythonProperty() const { return true; }
 };

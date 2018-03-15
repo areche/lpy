@@ -31,15 +31,21 @@
 #ifndef __LSYSCONTEXT_H__
 #define __LSYSCONTEXT_H__
 
+#include "lpy_config.h"
+#include "moduleclass.h"
+#include <string>
+
+#ifndef UNITY_MODULE
 #include "axialtree.h"
-#include "lsysoptions.h"
 #include "paramproduction.h"
 #include "lstringmatcher.h"
+#include "lsysoptions.h"
 #include <plantgl/algo/modelling/pglturtle.h>
 #include <plantgl/tool/util_hashset.h>
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QMap>
 #include <QtCore/QThreadStorage>
+#endif
 
 LPY_BEGIN_NAMESPACE
 
@@ -64,11 +70,13 @@ public:
 
   /** Constructor */
   LsysContext();
+#ifndef UNITY_MODULE
   LsysContext(const boost::python::dict& locals);
-
+#endif
   /** Destructor */
   virtual ~LsysContext();
 
+#ifndef UNITY_MODULE
   /** clear context. Set python namespace to default. Keep __builtin__, lpy and __filename__ object */
   void clear();
   /** Test whether namespace is empty */
@@ -162,7 +170,7 @@ public:
   /// protected access to python namespace. To be redefined.
   virtual boost::python::dict locals()  const { return __locals; };
   virtual PyObject * globals()  const { return NULL; };
-  
+
   /** make current or disable a context */
   void makeCurrent();
   bool isCurrent() const ;
@@ -252,10 +260,13 @@ public:
 	__selection_requested = false;
   }
 
+#endif
   /// Specify whether a warning should be made if found sharp module
   inline bool warnWithSharpModule() const { return __warn_with_sharp_module; }
+
   void setWarnWithSharpModule(bool);
 
+#ifndef UNITY_MODULE
   /// Specify whether the axiom should be decomposed
   inline bool axiomDecompositionEnabled() const { return __axiom_decomposition_enabled; }
   void enableAxiomDecomposition(bool);
@@ -276,9 +287,12 @@ public:
 
   /** module declaration. */
   void declare(const std::string& modules);
+#endif
+
   inline void declare(ModuleClassPtr module)
   { __modules.push_back(module); }
 
+#ifndef UNITY_MODULE
   void undeclare(const std::string& modules);
   void undeclare(ModuleClassPtr module);
   bool isDeclared(const std::string& module);
@@ -332,20 +346,22 @@ protected:
   size_t __initialiseFrom(const std::string& lcode);
 
   void namespaceInitialisation();
+#endif
 
   /** Event when context is made current, release, pushed or restore */
   virtual void currentEvent();
   virtual void doneEvent();
-  virtual void pushedEvent(LsysContext * newEvent);
   virtual void restoreEvent(LsysContext * previousEvent);
+#ifndef UNITY_MODULE
+  virtual void pushedEvent(LsysContext * newEvent);
 
   /// protected copy constructor.
   LsysContext(const LsysContext& lsys);
   LsysContext& operator=(const LsysContext& lsys);
 
-
   /// init options
   void init_options();
+#endif
 
   /// attributes for module declaration
   ModuleClassList __modules;
@@ -354,6 +370,7 @@ protected:
   typedef pgl_hash_map_string<ModuleClassPtr> AliasSet;
   AliasSet __aliases;
 
+#ifndef UNITY_MODULE
   /// next iteration control
   eDirection __direction;
   size_t __group;
@@ -375,9 +392,11 @@ protected:
   std::string __selection_message;
   bool __selection_requested;
 
+#endif
   /// Warn if found sharp module
   bool __warn_with_sharp_module;
 
+#ifndef UNITY_MODULE
   /// Check if axiom should be decomposed.
   bool __axiom_decomposition_enabled;
 
@@ -428,8 +447,10 @@ public:
 
 protected:
   boost::python::dict __globals;
+#endif
 };
 
+#ifndef UNITY_MODULE
 /*---------------------------------------------------------------------------*/
 
 class LPY_API GlobalContext : public LsysContext {
@@ -444,7 +465,6 @@ protected:
 
   boost::python::handle<> __globals;
   static boost::python::object __reprFunc;
-
 };
 
 /*---------------------------------------------------------------------------*/
@@ -529,6 +549,7 @@ struct ContextMaintainer {
 
     ~ContextMaintainer() { if (is_set) context->done();  }
 };
+#endif
 
 /*---------------------------------------------------------------------------*/
 

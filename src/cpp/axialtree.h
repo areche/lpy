@@ -33,7 +33,9 @@
 
 #include <vector>
 #include "module.h"
+#ifndef UNITY_MODULE
 #include "patternmodule.h"
+#endif
 #include "abstractlstring.h"
 #include "global.h"
 
@@ -42,7 +44,9 @@ LPY_BEGIN_NAMESPACE
 
 /*---------------------------------------------------------------------------*/
 
+#ifndef UNITY_MODULE
 class PatternString;
+#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -56,9 +60,11 @@ public:
   AxialTree();
   AxialTree(const AxialTree&);
   AxialTree(const std::string&);
-  AxialTree(const ParamModule&);
-  AxialTree(const boost::python::list&);
+#ifndef UNITY_MODULE
   AxialTree(const boost::python::tuple&);
+  AxialTree(const LpyObjectList&);
+#endif
+  AxialTree(const ParamModule&);
   AxialTree(const_iterator beg, const_iterator end);
 
   ~AxialTree();
@@ -69,7 +75,7 @@ public:
     inline std::string str() const { return str_slice(const_begin(),const_end()); }
     inline const char * c_str() const { return str().c_str(); }
 	inline std::string str_slice(int beg, int end) const
-	{ const_iterator begit, endit; getValidIterators(beg,end,begit,endit); return str_slice(begit,endit); }
+    { assert(beg >= 0 && beg < size() && end >= 0 && end < size() && beg < end); return str_slice(const_begin() + beg, const_begin() + end); }
 
 	std::string str_slice(const_iterator beg, const_iterator end) const;
 
@@ -99,7 +105,8 @@ public:
 					    const_iterator start,
 						const_iterator stop) const;
 
-	inline const_iterator find(const PatternModule& pattern) const
+#ifndef UNITY_MODULE
+    inline const_iterator find(const PatternModule& pattern) const
 	{ return find(pattern.name(),pattern.size(),const_begin(),const_end()); }
 
 	inline const_iterator find(const PatternModule& pattern, 
@@ -118,24 +125,24 @@ public:
 					    const_iterator start) const
 	{ return find(pattern,start,const_end()); }
 
-	const_iterator find(const PatternString& pattern, 
+    const_iterator find(const PatternString& pattern,
 					    const_iterator start,
 						const_iterator stop) const;
 
-	inline bool match(const PatternModule& pattern, 
+    inline bool match(const PatternModule& pattern,
 			   const_iterator pos) const
 	{ return pos->match(pattern); }
 
-	inline bool match(const PatternString& pattern, 
+    inline bool match(const PatternString& pattern,
 			   const_iterator  pos) const
    { AxialTree::const_iterator res; return match(pattern,pos,res); }
 
-	inline bool match(const PatternString& pattern, 
+    inline bool match(const PatternString& pattern,
 			   const_iterator  pos,
 			   const_iterator& resultingpos) const
 	{ ArgList params; return match(pattern,pos,resultingpos,params); }
 
-	inline bool match(const PatternString& pattern, 
+    inline bool match(const PatternString& pattern,
 			   const_iterator  pos,
 			   const_iterator& resultingpos,
 			   ArgList& params) const
@@ -222,10 +229,10 @@ public:
 	inline const_iterator leftfind(const PatternString& pattern) const
 	{ return leftfind(pattern,const_begin(),const_end()); }
 
-	AxialTree replace(const PatternModule&, const ParamModule&) const;
+    AxialTree replace(const PatternModule&, const ParamModule&) const;
 	AxialTree replace(const PatternModule&, const AxialTree&) const;
 	AxialTree replace(const PatternString&, const AxialTree&) const;
-
+#endif
 };
 
 

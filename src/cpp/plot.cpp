@@ -114,7 +114,9 @@ uint_t LPY::waitSelection(const std::string& txt)
 
 
 
-static void DEFAULTDISPLAYMESSAGE(const std::string& txt) { ViewerApplication::showMessage(txt); }
+static void DEFAULTDISPLAYMESSAGE(const std::string& txt) {
+    ViewerApplication::showMessage(txt);
+}
 
 static DisplayMessageFunction __DISPLAYMESSAGE = &DEFAULTDISPLAYMESSAGE;
 

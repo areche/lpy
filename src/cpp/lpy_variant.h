@@ -1,5 +1,5 @@
-#ifndef VARIANT_H
-#define VARIANT_H
+#ifndef LPY_VARIANT_H
+#define LPY_VARIANT_H
 
 #define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
 #define BOOST_MPL_LIMIT_LIST_SIZE 30
@@ -31,6 +31,8 @@ typedef enum {
     LPY_LINEICMODEL
 } LpyType;
 
+#include "lpy_config.h"
+
 #ifndef USING_PYTHON
 
 #include <boost/variant.hpp>
@@ -47,7 +49,6 @@ typedef enum {
 #include <plantgl/scenegraph/appearance/material.h>
 #include <plantgl/scenegraph/scene/scene.h>
 #include <plantgl/math/util_vector.h>
-#include "lpy_config.h"
 
 LPY_BEGIN_NAMESPACE
 class ParamModule;
@@ -240,7 +241,7 @@ typedef LpyVariantStringfier                                   LpyObjectStringfi
 typedef boost::python::object                                  LpyObject;
 typedef boost::python::object                                  LpyObjectStringfier;
 
-// #define USE_PYTHON_LIST_COLLECTOR
+//#define USE_PYTHON_LIST_COLLECTOR
 typedef boost::python::list                                    LpyObjectList;
 
 #ifndef USE_PYTHON_LIST_COLLECTOR
@@ -293,4 +294,4 @@ inline bool isContainer(const LpyObject & o) {
     return is<LpyObjectDeque>(o) || is<LpyObjectList>(o) || is<LpyObjectMap>(o);
 }
 
-#endif // VARIANT_H
+#endif // LPY_VARIANT_H
