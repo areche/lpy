@@ -2,7 +2,9 @@ macx {
     # Python configuration
     PYTHON_INCLUDE = /usr/include/python2.7
     PYTHON_LIB = /usr/lib/python2.7/config
+}
 
+macx | ios | android {
     # Boost configuration
     BOOST_INCLUDE = /usr/local/include
     BOOST_LIB = /usr/local/lib
