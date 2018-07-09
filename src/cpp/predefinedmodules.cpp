@@ -1166,7 +1166,7 @@ DeclareModuleBegin(endScreenProjection,"The turtle will create geometry in the w
 }
 DeclareModuleEnd
 
-DeclareModuleBegin(prefab, "Draw the predefined prefab at the turtle's current location and orientation", ePrimitive)
+DeclareModuleBegin(prefab, "Draw the predefined prefab at the turtle's current location and orientation. Params : ...", ePrimitive)
 {
     size_t nbargs = m.size();
     switch (nbargs) {
@@ -1283,7 +1283,7 @@ void ModuleClass::createPredefinedClasses() {
 	GetIterator = new PredefinedModuleClass("?I","GetIterator","Request an iterator over the current Lstring.",PredefinedModuleClass::ePatternMatching);
 	GetModule = new PredefinedModuleClass("$","GetModule","Request a module of the current Lstring.",PredefinedModuleClass::ePatternMatching);
 	New = new PredefinedModuleClass("new","newmodule","Create a new module whose name is given by first argument.",PredefinedModuleClass::eStringManipulation);
-    Prefab = new DeclaredModule(prefab)("prefab");
+    Prefab = new DeclaredModule(prefab)("P","Prefab");
 }
 
 #define CLEAR_PM(MName) ModuleClass::MName = NULL;
