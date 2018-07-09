@@ -1166,6 +1166,16 @@ DeclareModuleBegin(endScreenProjection,"The turtle will create geometry in the w
 }
 DeclareModuleEnd
 
+DeclareModuleBegin(prefab, "Draw the predefined prefab at the turtle's current location and orientation", ePrimitive)
+{
+    size_t nbargs = m.size();
+    switch (nbargs) {
+    case 0:  LsysWarning("Argument missing for module " + m.name()); break;
+    default: t.prefab(m._getString(0), m._getReal(1), m._getReal(2)); break;
+    }
+}
+DeclareModuleEnd
+
 /*---------------------------------------------------------------------------*/
 std::vector<ModuleClassPtr> * ModuleClass::PredefinedClasses = NULL;
 
@@ -1266,14 +1276,14 @@ void ModuleClass::createPredefinedClasses() {
 	TextureRotation = new DeclaredModule(TextureRotation)("TextureRotation");
 	TextureTransformation = new DeclaredModule(TextureTransformation)("TextureTransformation");
 	LeftReflection = new DeclaredModule(leftReflection)("LeftReflection");
-  UpReflection = new DeclaredModule(upReflection)("UpReflection");
-  HeadingReflection = new DeclaredModule(headingReflection)("HeadingReflection");
-  StartScreenProjection = new DeclaredModule(startScreenProjection)("@2D","StartScreenProjection");
-  EndScreenProjection = new DeclaredModule(endScreenProjection)("@3D","EndScreenProjection");
-
+    UpReflection = new DeclaredModule(upReflection)("UpReflection");
+    HeadingReflection = new DeclaredModule(headingReflection)("HeadingReflection");
+    StartScreenProjection = new DeclaredModule(startScreenProjection)("@2D","StartScreenProjection");
+    EndScreenProjection = new DeclaredModule(endScreenProjection)("@3D","EndScreenProjection");
 	GetIterator = new PredefinedModuleClass("?I","GetIterator","Request an iterator over the current Lstring.",PredefinedModuleClass::ePatternMatching);
 	GetModule = new PredefinedModuleClass("$","GetModule","Request a module of the current Lstring.",PredefinedModuleClass::ePatternMatching);
 	New = new PredefinedModuleClass("new","newmodule","Create a new module whose name is given by first argument.",PredefinedModuleClass::eStringManipulation);
+    Prefab = new DeclaredModule(prefab)("prefab");
 }
 
 #define CLEAR_PM(MName) ModuleClass::MName = NULL;

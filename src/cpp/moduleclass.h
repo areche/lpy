@@ -138,6 +138,7 @@ typedef pgl_hash_map_string<size_t> ParameterNameDict;
 	MACRO(HeadingReflection) \
 	MACRO(StartScreenProjection) \
 	MACRO(EndScreenProjection) \
+    MACRO(Prefab)
 
 #define DECLARE_PM(MName) static ModuleClassPtr MName;
 
