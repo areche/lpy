@@ -83,7 +83,6 @@ DeclareSimpleModule(pop,"Pop last state from turtle stack and make it the its cu
 
 DeclareModuleBegin(F, "Move forward and draw. Params: 'length , topradius'.",ePrimitive)
 {
-    t.warning("Move forward");
     size_t nbargs = m.size();
 	switch (nbargs) {
 		case 0:  t.F(); break;
@@ -619,7 +618,6 @@ DeclareModuleEnd
 
 DeclareModuleBegin(incWidth,"Increase the current line width or set it if a parameter is given. Params : 'width' (optional).",eWidth)
 {
-    t.warning("Increase width");
     if (m.empty())t.incWidth();
 	else t.setWidth(m._getReal(0));
 }
@@ -648,7 +646,6 @@ DeclareModuleEnd
 
 DeclareModuleBegin(decColor,"Decrease the current material index or set it if a parameter is given. Params : 'index' (optional, positive int).",eColor)
 {
-    t.warning("Decrese Material Index");
     if (m.empty())t.decColor();
 	else t.setColor(m._getInt(0));
 }

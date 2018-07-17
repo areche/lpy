@@ -440,7 +440,7 @@ public:
   bool match(const PatternModule&m, ArgList&) const;
   bool match(const std::string&, size_t nbargs) const;
 
-  inline void interpret(PGL::Turtle& t) { LsysWarning("Module::Interpret"); getClass()->interpret(*this,t); }
+  inline void interpret(PGL::Turtle& t) { getClass()->interpret(*this,t); }
 
   inline bool operator==(const ParamModule& other) const 
   { return (sameName(other) && (__argholder == other.__argholder || __constargs() == other.__constargs())); }

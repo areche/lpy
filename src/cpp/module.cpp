@@ -262,17 +262,12 @@ void processConstruction(ParamModule& module,
     if (l > 0) {
         args.reserve(l);
 
-        std::string debug = "[";
-
         for(size_t i = start; i < l-1; ++i){
-            debug += toString(list[i]) + ", ";
             appendParam(args, list[i]);
         }
         if(l > start) {
             processLastArg(module.getClass(), args, list[l-1]);
         }
-        debug += toString(list[l-1]) + "]";
-        LsysWarning("processConstruction : " + debug);
     }
 }
 
