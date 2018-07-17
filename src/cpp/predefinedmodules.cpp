@@ -1171,7 +1171,7 @@ DeclareModuleBegin(prefab, "Draw the predefined prefab at the turtle's current l
     size_t nbargs = m.size();
     switch (nbargs) {
     case 0:  LsysWarning("Argument missing for module " + m.name()); break;
-    default: t.prefab(m._getString(0), m._getReal(1), m._getReal(2)); break;
+    default: t.prefab(m._getString(0), m._getReal(1), m._getReal(2), m._getInt(3)); break;
     }
 }
 DeclareModuleEnd
